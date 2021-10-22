@@ -16,6 +16,10 @@ g_flask_app = flask.Flask(__name__)
 
 HTML_DIR = 'html'
 
+PARAM_KEG_ID = 'keg_id'
+PARAM_READING = 'reading'
+PARAM_READING_TIME = 'reading_time'
+
 class Database(object):
     """Base class for a database. Encapsulates common functionality."""
     db_file = ""
@@ -74,16 +78,17 @@ class KegDatabase(SqliteDatabase):
     """Database implementation."""
 
     def __init__(self, root_dir, file_name):
-        SqliteDatabase.__init__(root_dir, file_name)
+        SqliteDatabase.__init__(self, root_dir, file_name)
 
     def create_tables(self):
-        pass
+        sql = "create table status (id integer primary key, keg_id text, reading double, reading_time unsigned big int)"
+        self.execute(sql)
 
-    def create_reading(self, keg_id):
-        pass
+    def create_reading(self, keg_id, reading, reading_time):
+        return False
 
     def read_readings(self, keg_id):
-        pass
+        return []
 
 class App(object):
     """Web app logic is stored here to keep it compartmentalized from the framework logic."""
@@ -106,11 +111,22 @@ class App(object):
 
     def api(self, verb, method, params):
         """Handles API requests."""
+        method = method.lower()
+        handled = False
         if verb == 'GET':
-            pass
+            if method == 'status':
+                keg_id = params[PARAM_KEG_ID]
+                self.database.read_readings(keg_id)
+                handled = True
         elif verb == 'POST':
-            pass
-        return False, ""
+            if method == 'register_keg':
+                handled = True
+            elif method == 'update_weight':
+                keg_id = params[PARAM_KEG_ID]
+                reading = params[PARAM_READING]
+                reading_time = params[PARAM_READING_TIME]
+                handled = self.database.create_reading(keg_id, reading, reading_time)
+        return handled, ""
 
 @g_flask_app.route('/')
 def index():
@@ -138,6 +154,8 @@ def api(version, method):
         # Process the API request.
         if version == '1.0':
             handled, response = g_app.api(verb, method, params)
+            if not handled:
+                code = 400
         else:
             code = 400
     except:
@@ -160,7 +178,11 @@ def main():
         parser.error(e)
         sys.exit(1)
 
-    g_app = App()
+    mako.collection_size = 100
+    mako.directories = "templates"
+
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    g_app = App("", root_dir)
     g_flask_app.run()
 
 if __name__=="__main__":
