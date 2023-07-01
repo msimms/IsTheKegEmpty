@@ -7,7 +7,7 @@ import SwiftUI
 
 @main
 struct IsTheKegEmptyApp: App {
-    var body: some Scene {
+	var body: some Scene {
         WindowGroup {
             ContentView()
         }

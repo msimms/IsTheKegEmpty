@@ -14,6 +14,10 @@
 		27E89B682A4E1E1A004398DE /* IsTheKegEmptyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E89B672A4E1E1A004398DE /* IsTheKegEmptyTests.swift */; };
 		27E89B722A4E1E1A004398DE /* IsTheKegEmptyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E89B712A4E1E1A004398DE /* IsTheKegEmptyUITests.swift */; };
 		27E89B742A4E1E1A004398DE /* IsTheKegEmptyUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E89B732A4E1E1A004398DE /* IsTheKegEmptyUITestsLaunchTests.swift */; };
+		27E89B812A4E1FB6004398DE /* InventoryVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E89B802A4E1FB6004398DE /* InventoryVM.swift */; };
+		27E89B832A4E20FD004398DE /* KegView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E89B822A4E20FC004398DE /* KegView.swift */; };
+		27E89B852A4E22BC004398DE /* AuthVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E89B842A4E22BC004398DE /* AuthVM.swift */; };
+		27E89B872A4F7A09004398DE /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E89B862A4F7A09004398DE /* ApiClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,6 +49,10 @@
 		27E89B6D2A4E1E1A004398DE /* IsTheKegEmptyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IsTheKegEmptyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		27E89B712A4E1E1A004398DE /* IsTheKegEmptyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IsTheKegEmptyUITests.swift; sourceTree = "<group>"; };
 		27E89B732A4E1E1A004398DE /* IsTheKegEmptyUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IsTheKegEmptyUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		27E89B802A4E1FB6004398DE /* InventoryVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryVM.swift; sourceTree = "<group>"; };
+		27E89B822A4E20FC004398DE /* KegView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KegView.swift; sourceTree = "<group>"; };
+		27E89B842A4E22BC004398DE /* AuthVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthVM.swift; sourceTree = "<group>"; };
+		27E89B862A4F7A09004398DE /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,8 +103,12 @@
 		27E89B542A4E1E1A004398DE /* IsTheKegEmpty */ = {
 			isa = PBXGroup;
 			children = (
-				27E89B552A4E1E1A004398DE /* IsTheKegEmptyApp.swift */,
+				27E89B862A4F7A09004398DE /* ApiClient.swift */,
+				27E89B842A4E22BC004398DE /* AuthVM.swift */,
 				27E89B572A4E1E1A004398DE /* ContentView.swift */,
+				27E89B802A4E1FB6004398DE /* InventoryVM.swift */,
+				27E89B552A4E1E1A004398DE /* IsTheKegEmptyApp.swift */,
+				27E89B822A4E20FC004398DE /* KegView.swift */,
 				27E89B592A4E1E1A004398DE /* Assets.xcassets */,
 				27E89B5B2A4E1E1A004398DE /* IsTheKegEmpty.entitlements */,
 				27E89B5C2A4E1E1A004398DE /* Preview Content */,
@@ -259,8 +271,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27E89B852A4E22BC004398DE /* AuthVM.swift in Sources */,
 				27E89B582A4E1E1A004398DE /* ContentView.swift in Sources */,
 				27E89B562A4E1E1A004398DE /* IsTheKegEmptyApp.swift in Sources */,
+				27E89B832A4E20FD004398DE /* KegView.swift in Sources */,
+				27E89B812A4E1FB6004398DE /* InventoryVM.swift in Sources */,
+				27E89B872A4F7A09004398DE /* ApiClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
