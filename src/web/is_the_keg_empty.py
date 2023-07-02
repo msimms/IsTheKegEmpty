@@ -109,24 +109,69 @@ class App(object):
             pass
         return ""
 
-    def api(self, verb, method, params):
+    def handle_api_login(self, values):
+        return False, ""
+
+    def handle_api_create_login(self, values):
+        return False, ""
+
+    def handle_api_login_status(self, values):
+        return False, ""
+
+    def handle_api_logout(self, values):
+        return False, ""
+
+    def handle_api_keg_status(self, values):
+        keg_id = values[PARAM_KEG_ID]
+        self.database.read_readings(keg_id)
+        return False, ""
+
+    def handle_api_register_key(self, values):
+        return False, ""
+
+    def handle_api_update_keg_weight(self, values):
+        keg_id = values[PARAM_KEG_ID]
+        reading = values[PARAM_READING]
+        reading_time = values[PARAM_READING_TIME]
+        self.database.create_reading(keg_id, reading, reading_time)
+        return False, ""
+
+    def handle_api_1_0_get_request(self, request, values):
+        """Called to parse a version 1.0 API GET request."""
+        if request == 'login':
+            return self.handle_api_login(request, values)
+        if request == 'login_status':
+            return self.handle_api_login_status(request, values)
+        if request == 'keg_status':
+            return self.handle_api_keg_status(request, values)
+        return False, ""
+
+    def handle_api_1_0_post_request(self, request, values):
+        """Called to parse a version 1.0 API POST request."""
+        if request == 'create_login':
+            return self.handle_api_create_login(request, values)
+        if request == 'logout':
+            return self.handle_api_logout(request, values)
+        if request == 'register_keg':
+            return self.handle_api_register_key(request, values)
+        if request == 'update_keg_weight':
+            return self.handle_api_update_keg_weight(request, values)
+        return False, ""
+
+    def handle_api_1_0_delete_request(self, request, values):
+        """Called to parse a version 1.0 API DELETE request."""
+        return False, ""
+
+    def api(self, verb, request, values):
         """Handles API requests."""
-        method = method.lower()
-        handled = False
+        request = request.lower()
         if verb == 'GET':
-            if method == 'status':
-                keg_id = params[PARAM_KEG_ID]
-                self.database.read_readings(keg_id)
-                handled = True
+            return self.handle_api_1_0_get_request(request, values)
         elif verb == 'POST':
-            if method == 'register_keg':
-                handled = True
-            elif method == 'update_weight':
-                keg_id = params[PARAM_KEG_ID]
-                reading = params[PARAM_READING]
-                reading_time = params[PARAM_READING_TIME]
-                handled = self.database.create_reading(keg_id, reading, reading_time)
-        return handled, ""
+            return self.handle_api_1_0_post_request(request, values)
+        elif verb == 'DELETE':
+            return self.handle_api_1_0_delete_request(request, values)
+        return False, ""
 
 @g_flask_app.route('/')
 def index():
@@ -134,7 +179,7 @@ def index():
     global g_app
     return g_app.index()
 
-@g_flask_app.route('/api/<version>/<method>', methods = ['GET','POST'])
+@g_flask_app.route('/api/<version>/<method>', methods = ['GET','POST','DELETE'])
 def api(version, method):
     """Endpoint for API calls."""
     global g_app
@@ -142,13 +187,17 @@ def api(version, method):
     code = 200
     try:
         # The the API params.
-        verb = "POST"
         if flask.request.method == 'GET':
             verb = "GET"
             params = flask.request.args
+        elif flask.request.method == 'DELETE':
+            verb = "DELETE"
+            params = flask.request.args
         elif flask.request.data:
+            verb = "POST"
             params = json.loads(flask.request.data)
         else:
+            verb = "GET"
             params = ""
 
         # Process the API request.

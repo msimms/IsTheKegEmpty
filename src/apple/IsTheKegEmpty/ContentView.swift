@@ -17,7 +17,7 @@ struct ContentView: View {
 
 	var body: some View {
         VStack {
-			if self.authVM.isLoggedIn() {
+			if ApiClient.shared.loggedIn == true {
 				List(self.inventoryVM.listKegs(), id: \.self) { item in
 					NavigationLink(destination: KegView()) {
 						HStack() {

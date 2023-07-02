@@ -6,11 +6,11 @@
 import Foundation
 
 class AuthVM : ObservableObject {
-	func isLoggedIn() -> Bool {
-		return false
+	func login(username: String, password: String) -> Bool {
+		return ApiClient.shared.login(username: username, password: password)
 	}
 	
-	func login(username: String, password: String) -> Bool {
-		return false
+	func createLogin(username: String, password1: String, password2: String, realname: String) -> Bool {
+		return ApiClient.shared.createLogin(username: username, password1: password1, password2: password2, realname: realname)
 	}
 }
