@@ -55,9 +55,7 @@ struct ContentView: View {
 					
 					Group() {
 						Button {
-							if self.authVM.login(username: self.email, password: self.password) {
-							}
-							else {
+							if !self.authVM.login(username: self.email, password: self.password) {
 								self.showingLoginError = true
 							}
 						} label: {
