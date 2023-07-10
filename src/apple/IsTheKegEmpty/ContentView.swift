@@ -16,8 +16,8 @@ struct ContentView: View {
 	@State private var showingLoginError: Bool = false
 
 	var body: some View {
-        VStack {
-			if ApiClient.shared.loggedIn == true {
+		if ApiClient.shared.loginStatus == LoginStatus.LOGIN_STATUS_SUCCESS {
+			VStack(alignment: .center) {
 				List(self.inventoryVM.listKegs(), id: \.self) { item in
 					NavigationLink(destination: KegView()) {
 						HStack() {
@@ -32,55 +32,55 @@ struct ContentView: View {
 				}
 				.listStyle(.plain)
 			}
-			else {
-				VStack(alignment: .center) {
-					Group() {
-						Text("Email")
-							.bold()
-						TextField("Email", text: self.$email)
-							.foregroundColor(self.colorScheme == .dark ? .white : .black)
-							.background(self.colorScheme == .dark ? .black : .white)
-							.autocorrectionDisabled()
+		}
+		else {
+			VStack(alignment: .center) {
+				Text("Email")
+					.bold()
+					.font(Font.system(size: 36, design: .default))
+				TextField("Email", text: self.$email)
+					.foregroundColor(self.colorScheme == .dark ? .white : .black)
+					.background(self.colorScheme == .dark ? .black : .white)
+					.bold()
+					.autocorrectionDisabled()
+					.padding()
+					.font(Font.system(size: 36, design: .default))
+
+				Text("Password")
+					.bold()
+					.font(Font.system(size: 36, design: .default))
+				SecureField("Password", text: self.$password)
+					.foregroundColor(self.colorScheme == .dark ? .white : .black)
+					.background(self.colorScheme == .dark ? .black : .white)
+					.bold()
+					.padding()
+					.font(Font.system(size: 36, design: .default))
+
+				Button {
+					if !self.authVM.login(username: self.email, password: self.password) {
+						self.showingLoginError = true
 					}
-					.padding(EdgeInsets.init(top: 5, leading: 10, bottom: 5, trailing: 10))
-					Group() {
-						Text("Password")
-							.bold()
-						SecureField("Password", text: self.$password)
-							.foregroundColor(self.colorScheme == .dark ? .white : .black)
-							.background(self.colorScheme == .dark ? .black : .white)
-							.bold()
-					}
-					.padding(EdgeInsets.init(top: 5, leading: 10, bottom: 20, trailing: 10))
-					
-					Group() {
-						Button {
-							if !self.authVM.login(username: self.email, password: self.password) {
-								self.showingLoginError = true
-							}
-						} label: {
-							Text("Login")
-								.foregroundColor(self.colorScheme == .dark ? .black : .white)
-								.fontWeight(Font.Weight.heavy)
-								.frame(minWidth: 0, maxWidth: .infinity)
-								.padding()
-						}
-						.alert("Login failed!", isPresented: self.$showingLoginError) { }
-						.background(RoundedRectangle(cornerRadius: 10, style: .continuous))
-						.opacity(0.8)
-						.bold()
-					}
-					.padding(EdgeInsets.init(top: 5, leading: 10, bottom: 20, trailing: 10))
+				} label: {
+					Text("Login")
+						.foregroundColor(self.colorScheme == .dark ? .black : .white)
+						.fontWeight(Font.Weight.heavy)
+						.frame(minWidth: 0, maxWidth: .infinity)
+						.padding()
+						.font(Font.system(size: 36, design: .default))
 				}
-				.background(
-					Image("lock")
-						.resizable()
-						.edgesIgnoringSafeArea(.all)
-						.aspectRatio(contentMode: .fill)
-				)
+				.alert("Login failed!", isPresented: self.$showingLoginError) { }
+				.bold()
+				.background(RoundedRectangle(cornerRadius: 10, style: .continuous))
+				.padding()
+				.buttonStyle(PlainButtonStyle())
 			}
-        }
-		.padding(10)
+			.background(
+				Image("lock")
+					.resizable()
+					.edgesIgnoringSafeArea(.all)
+					.aspectRatio(contentMode: .fill)
+			)
+		}
     }
 }
 

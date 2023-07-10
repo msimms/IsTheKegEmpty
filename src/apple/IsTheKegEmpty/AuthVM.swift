@@ -24,7 +24,12 @@ class AuthVM : ObservableObject {
 	@objc func loginStatusUpdated(notification: NSNotification) {
 		if let data = notification.object as? Dictionary<String, AnyObject> {
 			if let responseCode = data[KEY_NAME_RESPONSE_CODE] as? HTTPURLResponse {
-				ApiClient.shared.loggedIn = responseCode.statusCode == 200
+				if responseCode.statusCode == 200 {
+					ApiClient.shared.loginStatus = LoginStatus.LOGIN_STATUS_SUCCESS
+				}
+				else {
+					ApiClient.shared.loginStatus = LoginStatus.LOGIN_STATUS_FAILURE
+				}
 			}
 		}
 	}
@@ -32,7 +37,12 @@ class AuthVM : ObservableObject {
 	@objc func loginProcessed(notification: NSNotification) {
 		if let data = notification.object as? Dictionary<String, AnyObject> {
 			if let responseCode = data[KEY_NAME_RESPONSE_CODE] as? HTTPURLResponse {
-				ApiClient.shared.loggedIn = responseCode.statusCode == 200
+				if responseCode.statusCode == 200 {
+					ApiClient.shared.loginStatus = LoginStatus.LOGIN_STATUS_SUCCESS
+				}
+				else {
+					ApiClient.shared.loginStatus = LoginStatus.LOGIN_STATUS_FAILURE
+				}
 			}
 		}
 	}
@@ -40,7 +50,12 @@ class AuthVM : ObservableObject {
 	@objc func createLoginProcessed(notification: NSNotification) {
 		if let data = notification.object as? Dictionary<String, AnyObject> {
 			if let responseCode = data[KEY_NAME_RESPONSE_CODE] as? HTTPURLResponse {
-				ApiClient.shared.loggedIn = responseCode.statusCode == 200
+				if responseCode.statusCode == 200 {
+					ApiClient.shared.loginStatus = LoginStatus.LOGIN_STATUS_SUCCESS
+				}
+				else {
+					ApiClient.shared.loginStatus = LoginStatus.LOGIN_STATUS_FAILURE
+				}
 			}
 		}
 	}
@@ -48,7 +63,9 @@ class AuthVM : ObservableObject {
 	@objc func logoutProcessed(notification: NSNotification) {
 		if let data = notification.object as? Dictionary<String, AnyObject> {
 			if let responseCode = data[KEY_NAME_RESPONSE_CODE] as? HTTPURLResponse {
-				ApiClient.shared.loggedIn = responseCode.statusCode == 200
+				if responseCode.statusCode == 200 {
+					ApiClient.shared.loginStatus = LoginStatus.LOGIN_STATUS_FAILURE
+				}
 			}
 		}
 	}

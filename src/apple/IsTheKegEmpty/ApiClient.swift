@@ -31,9 +31,15 @@ let PARAM_PASSWORD1 = "password1"
 let PARAM_PASSWORD2 = "password2"
 let PARAM_REALNAME = "realname"
 
+enum LoginStatus : Int {
+	case LOGIN_STATUS_UNKNOWN = 0
+	case LOGIN_STATUS_SUCCESS
+	case LOGIN_STATUS_FAILURE
+}
+
 class ApiClient {
 	static let shared = ApiClient()
-	@Published var loggedIn = false
+	@Published var loginStatus: LoginStatus = LoginStatus.LOGIN_STATUS_UNKNOWN
 	
 	/// Singleton constructor
 	private init() {
@@ -107,6 +113,13 @@ class ApiClient {
 					else {
 						NSLog("Error code received from the server for " + url)
 					}
+				}
+				
+				// Nil returned, assume the server isn't there.
+				else if url.contains(REMOTE_API_IS_LOGGED_IN_URL) ||
+						url.contains(REMOTE_API_LOGIN_URL) ||
+						url.contains(REMOTE_API_CREATE_LOGIN_URL) {
+						self.loginStatus = LoginStatus.LOGIN_STATUS_FAILURE
 				}
 			}
 			
