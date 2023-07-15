@@ -1,0 +1,3 @@
+[submodule "SimpleSwiftCharts"]
+	path = SimpleSwiftCharts
+	url = https://github.com/msimms/SimpleSwiftCharts
