@@ -11,12 +11,17 @@ struct ContentView: View {
 	@ObservedObject private var authVM : AuthVM = AuthVM()
 	@ObservedObject private var inventoryVM : InventoryVM = InventoryVM()
 
+	@State private var realname: String = ""
 	@State private var email: String = ""
 	@State private var password: String = ""
-	@State private var showingLoginError: Bool = false
+	@State private var passwordConfirmation: String = ""
+	@State private var showingFailedToSendLoginError: Bool = false
+	@State private var showingFailedToSendCreateLoginError: Bool = false
+	@State private var creatingNewLogin: Bool = false
 
 	var body: some View {
-		if ApiClient.shared.loginStatus == LoginStatus.LOGIN_STATUS_SUCCESS {
+		// Logged in, show the kegs.
+		if self.authVM.loginStatus == LoginStatus.LOGIN_STATUS_SUCCESS {
 			VStack(alignment: .center) {
 				List(self.inventoryVM.listKegs(), id: \.self) { item in
 					NavigationLink(destination: KegView()) {
@@ -33,8 +38,25 @@ struct ContentView: View {
 				.listStyle(.plain)
 			}
 		}
+		
+		// Not logged in, show the login screen.
 		else {
 			VStack(alignment: .center) {
+				// Real Name
+				if self.creatingNewLogin == true {
+					Text("Real Name")
+						.bold()
+						.font(Font.system(size: 36, design: .default))
+					TextField("Real Name", text: self.$realname)
+						.foregroundColor(self.colorScheme == .dark ? .white : .black)
+						.background(self.colorScheme == .dark ? .black : .white)
+						.bold()
+						.autocorrectionDisabled()
+						.padding()
+						.font(Font.system(size: 36, design: .default))
+				}
+
+				// Email
 				Text("Email")
 					.bold()
 					.font(Font.system(size: 36, design: .default))
@@ -46,6 +68,7 @@ struct ContentView: View {
 					.padding()
 					.font(Font.system(size: 36, design: .default))
 
+				// Password
 				Text("Password")
 					.bold()
 					.font(Font.system(size: 36, design: .default))
@@ -55,20 +78,59 @@ struct ContentView: View {
 					.bold()
 					.padding()
 					.font(Font.system(size: 36, design: .default))
+				
+				// Password Confirmation
+				if self.creatingNewLogin == true {
+					Text("Password Confirmation")
+						.bold()
+						.font(Font.system(size: 36, design: .default))
+					SecureField("Password Confirmation", text: self.$passwordConfirmation)
+						.foregroundColor(self.colorScheme == .dark ? .white : .black)
+						.background(self.colorScheme == .dark ? .black : .white)
+						.bold()
+						.padding()
+						.font(Font.system(size: 36, design: .default))
+				}
+				
+				// Login button
+				if self.creatingNewLogin == false {
+					Button {
+						if !self.authVM.login(username: self.email, password: self.password) {
+							self.showingFailedToSendCreateLoginError = true
+						}
+					} label: {
+						Text("Login")
+							.foregroundColor(self.colorScheme == .dark ? .black : .white)
+							.fontWeight(Font.Weight.heavy)
+							.frame(minWidth: 0, maxWidth: .infinity)
+							.padding()
+							.font(Font.system(size: 36, design: .default))
+					}
+					.alert("Failed to send the login request!", isPresented: self.$showingFailedToSendCreateLoginError) { }
+					.alert("Login failed!", isPresented: self.$authVM.loginErrorReceived) { }
+					.bold()
+					.background(RoundedRectangle(cornerRadius: 10, style: .continuous))
+					.padding()
+					.buttonStyle(PlainButtonStyle())
+				}
 
+				// Create Login button
 				Button {
-					if !self.authVM.login(username: self.email, password: self.password) {
-						self.showingLoginError = true
+					if self.creatingNewLogin == true {
+						if !self.authVM.createLogin(username: self.email, password1: self.password, password2: self.passwordConfirmation, realname: self.realname) {
+						}
+					}
+					else {
+						self.creatingNewLogin = true
 					}
 				} label: {
-					Text("Login")
+					Text("Create Login")
 						.foregroundColor(self.colorScheme == .dark ? .black : .white)
 						.fontWeight(Font.Weight.heavy)
 						.frame(minWidth: 0, maxWidth: .infinity)
 						.padding()
 						.font(Font.system(size: 36, design: .default))
 				}
-				.alert("Login failed!", isPresented: self.$showingLoginError) { }
 				.bold()
 				.background(RoundedRectangle(cornerRadius: 10, style: .continuous))
 				.padding()

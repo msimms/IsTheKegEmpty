@@ -128,52 +128,96 @@ class KegDatabase(SqliteDatabase):
         sql = "create table status (id integer primary key, keg_id text, reading double, reading_time unsigned big int)"
         self.execute(sql)
 
-    def create_user(email, realname, computed_hash):
+    def create_user(self, email, realname, computed_hash):
+        con = None
         try:
-            con = super.connect()
             sql = "insert into user values (NULL,?,?,?)"
+            con = self.connect()
             cur = con.cursor()
-            cur.executemany(sql, [(email,realname, computed_hash)])
+            cur.executemany(sql, [(email, realname, computed_hash)])
+            con.commit()
+            return True
         except:
-            super.log_error("Error creating a user.")
+            self.log_error("Error creating a user.")
         finally:
-            if con:
+            if con is not None:
                 con.close()
         return False
 
     def retrieve_user(self, email):
+        con = None
         try:
-            sql = "select * from user where username = "
+            sql = "select * from user where username = ?"
+            con = self.connect()
+            cur = con.cursor()
+            cur.executemany(sql, [(email)])
         except:
-            super.log_error("Error retrieving a user.")
-        return None
+            self.log_error("Error retrieving a user.")
+        finally:
+            if con is not None:
+                con.close()
+        return None, None
 
     def delete_user(self, email):
+        con = None
         try:
-            sql = "delete from user where username = "
+            sql = "delete from user where username = ?"
+            con = self.connect()
+            cur = con.cursor()
+            cur.executemany(sql, [(email)])
+            con.commit()
+            return True
         except:
-            super.log_error("Error deleting a user.")
+            self.log_error("Error deleting a user.")
+        finally:
+            if con is not None:
+                con.close()
         return False
 
     def create_reading(self, keg_id, reading, reading_time):
+        con = None
         try:
-            sql = "insert into status values (NULL,?,?,?,?)"
+            sql = "insert into status values (NULL,?,?,?)"
+            con = self.connect()
+            cur = con.cursor()
+            cur.executemany(sql, [(keg_id, reading, reading_time)])
+            con.commit()
+            return True
         except:
-            super.log_error("Error creating a reading.")
+            self.log_error("Error creating a reading.")
+        finally:
+            if con is not None:
+                con.close()
         return False
 
     def retrieve_readings(self, keg_id):
+        con = None
         try:
-            sql = "select * from status where "
+            sql = "select * from status where keg_id = ?"
+            con = self.connect()
+            cur = con.cursor()
+            cur.executemany(sql, [(keg_id)])
         except:
-            super.log_error("Error retrieving readings.")
+            self.log_error("Error retrieving readings.")
+        finally:
+            if con is not None:
+                con.close()
         return []
 
     def delete_readings(self, keg_id):
+        con = None
         try:
-            sql = "delete from status where keg_id = "
+            sql = "delete from status where keg_id = ?"
+            con = self.connect()
+            cur = con.cursor()
+            cur.executemany(sql, [(keg_id)])
+            con.commit()
+            return True
         except:
-            super.log_error("Error deleting a user.")
+            self.log_error("Error deleting a user.")
+        finally:
+            if con is not None:
+                con.close()
         return False
 
 class UserMgr(object):
@@ -191,7 +235,7 @@ class UserMgr(object):
         if len(password) < MIN_PASSWORD_LEN:
             raise Exception("The password is too short.")
 
-        _, db_hash1, _ = self.database.retrieve_user(email)
+        db_hash1, _ = self.database.retrieve_user(email)
         if db_hash1 is None:
             raise Exception("The user (" + email + ") could not be found.")
 
@@ -213,15 +257,22 @@ class UserMgr(object):
             raise Exception("The password is too short.")
         if password1 != password2:
             raise Exception("The passwords do not match.")
-        if self.database.retrieve_user(email) is None:
+
+        # Make sure this user doesn't already exist.
+        _, db_hash1 = self.database.retrieve_user(email)
+        if db_hash1 is not None:
             raise Exception("The user already exists.")
 
+        # Generate the salted hash of the password.
         salt = bcrypt.gensalt()
         computed_hash = bcrypt.hashpw(password1.encode('utf-8'), salt)
         if not self.database.create_user(email, realname, computed_hash):
             raise Exception("An internal error was encountered when creating the user.")
 
         return True
+
+    def create_new_session(self, email):
+        return None, None
 
 class App(object):
     """Web app logic is stored here to keep it compartmentalized from the framework logic."""
@@ -232,6 +283,11 @@ class App(object):
         self.root_url = root_url
         self.user_mgr = UserMgr(self.database)
         super(App, self).__init__()
+
+    def log_error(self, log_str):
+        """Writes an error message to the log file."""
+        logger = logging.getLogger()
+        logger.error(log_str)
 
     def index(self):
         """Renders the index page."""
@@ -384,7 +440,7 @@ def api(version, method):
     """Endpoint for API calls."""
     global g_app
     response = ""
-    code = 200
+    code = 500
     try:
         # The the API params.
         if flask.request.method == 'GET':
@@ -407,16 +463,14 @@ def api(version, method):
                 code = 400
         else:
             code = 400
+    except ApiException as e:
+        g_app.log_error(e.message)
+        code = e.code
     except:
-        log_error(traceback.format_exc())
-        log_error(sys.exc_info()[0])
-        log_error('Unhandled exception in ' + api.__name__)
+        g_app.log_error(traceback.format_exc())
+        g_app.log_error(sys.exc_info()[0])
+        g_app.log_error('Unhandled exception in ' + api.__name__)
     return response, code
-
-def log_error(log_str):
-    """Writes an error message to the log file."""
-    logger = logging.getLogger()
-    logger.error(log_str)
 
 def check():
     pass

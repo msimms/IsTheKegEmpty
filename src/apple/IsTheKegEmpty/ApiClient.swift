@@ -39,7 +39,6 @@ enum LoginStatus : Int {
 
 class ApiClient {
 	static let shared = ApiClient()
-	@Published var loginStatus: LoginStatus = LoginStatus.LOGIN_STATUS_UNKNOWN
 	
 	/// Singleton constructor
 	private init() {
@@ -113,13 +112,6 @@ class ApiClient {
 					else {
 						NSLog("Error code received from the server for " + url)
 					}
-				}
-				
-				// Nil returned, assume the server isn't there.
-				else if url.contains(REMOTE_API_IS_LOGGED_IN_URL) ||
-						url.contains(REMOTE_API_LOGIN_URL) ||
-						url.contains(REMOTE_API_CREATE_LOGIN_URL) {
-						self.loginStatus = LoginStatus.LOGIN_STATUS_FAILURE
 				}
 			}
 			
