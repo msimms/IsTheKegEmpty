@@ -9,6 +9,7 @@ import mako
 import os
 import sqlite3
 import sys
+import traceback
 import InputChecker
 
 from urllib.parse import unquote_plus
@@ -17,6 +18,7 @@ from mako.template import Template
 g_app = None
 g_flask_app = flask.Flask(__name__)
 
+ERROR_LOG = 'error.log'
 MIN_PASSWORD_LEN  = 8
 HTML_DIR = 'html'
 PARAM_KEG_ID = 'keg_id'
@@ -95,13 +97,14 @@ class SqliteDatabase(Database):
         Database.__init__(self)
 
     def connect(self):
-        """Inherited from the base class and unused."""
-        pass
+        """Connects/opens the files."""
+        con = sqlite3.connect(self.db_file_name)
+        return con
 
     def execute(self, sql):
         """Executes the specified SQL query."""
         try:
-            con = sqlite3.connect(self.db_file_name)
+            con = self.connect()
             with con:
                 cur = con.cursor()
                 cur.execute(sql)
@@ -126,31 +129,58 @@ class KegDatabase(SqliteDatabase):
         self.execute(sql)
 
     def create_user(email, realname, computed_hash):
-        sql = "insert into user "
+        try:
+            con = super.connect()
+            sql = "insert into user values (NULL,?,?,?)"
+            cur = con.cursor()
+            cur.executemany(sql, [(email,realname, computed_hash)])
+        except:
+            super.log_error("Error creating a user.")
+        finally:
+            if con:
+                con.close()
         return False
 
     def retrieve_user(self, email):
+        try:
+            sql = "select * from user where username = "
+        except:
+            super.log_error("Error retrieving a user.")
         return None
 
     def delete_user(self, email):
-        return None
+        try:
+            sql = "delete from user where username = "
+        except:
+            super.log_error("Error deleting a user.")
+        return False
 
     def create_reading(self, keg_id, reading, reading_time):
-        sql = "insert into status "
+        try:
+            sql = "insert into status values (NULL,?,?,?,?)"
+        except:
+            super.log_error("Error creating a reading.")
         return False
 
     def retrieve_readings(self, keg_id):
+        try:
+            sql = "select * from status where "
+        except:
+            super.log_error("Error retrieving readings.")
         return []
 
     def delete_readings(self, keg_id):
-        return None
+        try:
+            sql = "delete from status where keg_id = "
+        except:
+            super.log_error("Error deleting a user.")
+        return False
 
 class UserMgr(object):
     """Encapsulates user authentication and management."""
 
     def __init__(self, database):
         self.database = database
-        super(Database, self).__init__()
 
     def authenticate_user(self, email, password):
         """Validates a user against the credentials in the database."""
@@ -214,32 +244,29 @@ class App(object):
         return ""
 
     def handle_api_login(self, values):
-        if self.user_id is not None:
-            return True, ""
-
         # Required parameters.
         if PARAM_USERNAME not in values:
-            raise ApiException.ApiAuthenticationException("Username not specified.")
+            raise ApiAuthenticationException("Username not specified.")
         if PARAM_PASSWORD not in values:
-            raise ApiException.ApiAuthenticationException("Password not specified.")
+            raise ApiAuthenticationException("Password not specified.")
 
         # Decode and validate the required parameters.
         email = unquote_plus(values[PARAM_USERNAME])
         if not InputChecker.is_email_address(email):
-            raise ApiException.ApiAuthenticationException("Invalid email address.")
+            raise ApiAuthenticationException("Invalid email address.")
         password = unquote_plus(values[PARAM_PASSWORD])
 
         try:
             if not self.user_mgr.authenticate_user(email, password):
-                raise ApiException.ApiAuthenticationException("Authentication failed.")
+                raise ApiAuthenticationException("Authentication failed.")
         except Exception as e:
-            raise ApiException.ApiAuthenticationException(str(e))
+            raise ApiAuthenticationException(str(e))
 
         cookie, expiry = self.user_mgr.create_new_session(email)
         if not cookie:
-            raise ApiException.ApiAuthenticationException("Session cookie not generated.")
+            raise ApiAuthenticationException("Session cookie not generated.")
         if not expiry:
-            raise ApiException.ApiAuthenticationException("Session expiry not generated.")
+            raise ApiAuthenticationException("Session expiry not generated.")
 
         session_data = {}
         session_data[PARAM_SESSION_TOKEN] = cookie
@@ -249,18 +276,15 @@ class App(object):
         return True, json_result
 
     def handle_api_create_login(self, values):
-        if self.user_id is not None:
-            raise Exception("Already logged in.")
-
         # Required parameters.
         if PARAM_USERNAME not in values:
-            raise ApiException.ApiAuthenticationException("Username not specified.")
+            raise ApiAuthenticationException("Username not specified.")
         if PARAM_REALNAME not in values:
-            raise ApiException.ApiAuthenticationException("Real name not specified.")
+            raise ApiAuthenticationException("Real name not specified.")
         if PARAM_PASSWORD1 not in values:
-            raise ApiException.ApiAuthenticationException("Password not specified.")
+            raise ApiAuthenticationException("Password not specified.")
         if PARAM_PASSWORD2 not in values:
-            raise ApiException.ApiAuthenticationException("Password confirmation not specified.")
+            raise ApiAuthenticationException("Password confirmation not specified.")
 
         # Decode and validate the required parameters.
         email = unquote_plus(values[PARAM_USERNAME])
@@ -280,9 +304,9 @@ class App(object):
 
         cookie, expiry = self.user_mgr.create_new_session(email)
         if not cookie:
-            raise ApiException.ApiAuthenticationException("Session cookie not generated.")
+            raise ApiAuthenticationException("Session cookie not generated.")
         if not expiry:
-            raise ApiException.ApiAuthenticationException("Session expiry not generated.")
+            raise ApiAuthenticationException("Session expiry not generated.")
 
         session_data = {}
         session_data[PARAM_SESSION_TOKEN] = cookie
@@ -314,24 +338,24 @@ class App(object):
 
     def handle_api_1_0_get_request(self, request, values):
         """Called to parse a version 1.0 API GET request."""
-        if request == 'login':
-            return self.handle_api_login(request, values)
         if request == 'login_status':
-            return self.handle_api_login_status(request, values)
+            return self.handle_api_login_status(values)
         if request == 'keg_status':
-            return self.handle_api_keg_status(request, values)
+            return self.handle_api_keg_status(values)
         return False, ""
 
     def handle_api_1_0_post_request(self, request, values):
         """Called to parse a version 1.0 API POST request."""
+        if request == 'login':
+            return self.handle_api_login(values)
         if request == 'create_login':
-            return self.handle_api_create_login(request, values)
+            return self.handle_api_create_login(values)
         if request == 'logout':
-            return self.handle_api_logout(request, values)
+            return self.handle_api_logout(values)
         if request == 'register_keg':
-            return self.handle_api_register_key(request, values)
+            return self.handle_api_register_key(values)
         if request == 'update_keg_weight':
-            return self.handle_api_update_keg_weight(request, values)
+            return self.handle_api_update_keg_weight(values)
         return False, ""
 
     def handle_api_1_0_delete_request(self, request, values):
@@ -343,9 +367,9 @@ class App(object):
         request = request.lower()
         if verb == 'GET':
             return self.handle_api_1_0_get_request(request, values)
-        elif verb == 'POST':
+        if verb == 'POST':
             return self.handle_api_1_0_post_request(request, values)
-        elif verb == 'DELETE':
+        if verb == 'DELETE':
             return self.handle_api_1_0_delete_request(request, values)
         return False, ""
 
@@ -384,8 +408,15 @@ def api(version, method):
         else:
             code = 400
     except:
-        pass
+        log_error(traceback.format_exc())
+        log_error(sys.exc_info()[0])
+        log_error('Unhandled exception in ' + api.__name__)
     return response, code
+
+def log_error(log_str):
+    """Writes an error message to the log file."""
+    logger = logging.getLogger()
+    logger.error(log_str)
 
 def check():
     pass
@@ -393,6 +424,9 @@ def check():
 def main():
     global g_app
     global g_flask_app
+
+    # Configure the error logger.
+    logging.basicConfig(filename=ERROR_LOG, filemode='w', level=logging.DEBUG, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
     # Parse command line options.
     parser = argparse.ArgumentParser()
