@@ -104,11 +104,12 @@ class SqliteDatabase(Database):
     def execute(self, sql):
         """Executes the specified SQL query."""
         try:
-            con = self.connect()
-            with con:
-                cur = con.cursor()
-                cur.execute(sql)
-                return cur.fetchall()
+            if sqlite3.complete_statement(sql) == 1:
+                con = self.connect()
+                with con:
+                    cur = con.cursor()
+                    cur.execute(sql)
+                    return cur.fetchall()
         except:
             self.log_error("Database error:\n\tfile = " + self.db_file_name + "\n\tsql = " + self.quote_identifier(sql))
         finally:
@@ -123,15 +124,15 @@ class KegDatabase(SqliteDatabase):
         SqliteDatabase.__init__(self, root_dir, file_name)
 
     def create_tables(self):
-        sql = "create table user (id integer primary key, username text, realname text, passhash text)"
+        sql = "create table user (id integer primary key, username text, realname text, passhash text);"
         self.execute(sql)
-        sql = "create table status (id integer primary key, keg_id text, reading double, reading_time unsigned big int)"
+        sql = "create table status (id integer primary key, keg_id text, reading double, reading_time unsigned big int);"
         self.execute(sql)
 
     def create_user(self, email, realname, computed_hash):
         con = None
         try:
-            sql = "insert into user values (NULL,?,?,?)"
+            sql = "insert into user values (NULL,?,?,?);"
             con = self.connect()
             cur = con.cursor()
             cur.executemany(sql, [(email, realname, computed_hash)])
@@ -147,10 +148,10 @@ class KegDatabase(SqliteDatabase):
     def retrieve_user(self, email):
         con = None
         try:
-            sql = "select * from user where username = ?"
-            con = self.connect()
-            cur = con.cursor()
-            cur.executemany(sql, [(email)])
+            sql = "select passhash, realname from user where username = '" + str(email) + "' limit 1;"
+            res = self.execute(sql)
+            for row in res:
+                return row[0], row[1]
         except:
             self.log_error("Error retrieving a user.")
         finally:
@@ -161,11 +162,8 @@ class KegDatabase(SqliteDatabase):
     def delete_user(self, email):
         con = None
         try:
-            sql = "delete from user where username = ?"
-            con = self.connect()
-            cur = con.cursor()
-            cur.executemany(sql, [(email)])
-            con.commit()
+            sql = "delete from user where username = '" + str(email) + "';"
+            _ = self.execute(sql)
             return True
         except:
             self.log_error("Error deleting a user.")
@@ -177,7 +175,7 @@ class KegDatabase(SqliteDatabase):
     def create_reading(self, keg_id, reading, reading_time):
         con = None
         try:
-            sql = "insert into status values (NULL,?,?,?)"
+            sql = "insert into status values (NULL,?,?,?);"
             con = self.connect()
             cur = con.cursor()
             cur.executemany(sql, [(keg_id, reading, reading_time)])
@@ -193,10 +191,10 @@ class KegDatabase(SqliteDatabase):
     def retrieve_readings(self, keg_id):
         con = None
         try:
-            sql = "select * from status where keg_id = ?"
-            con = self.connect()
-            cur = con.cursor()
-            cur.executemany(sql, [(keg_id)])
+            sql = "select * from status where keg_id = " + str(keg_id) + ";"
+            res = self.execute(sql)
+            for row in res:
+                print(row)
         except:
             self.log_error("Error retrieving readings.")
         finally:
@@ -207,11 +205,8 @@ class KegDatabase(SqliteDatabase):
     def delete_readings(self, keg_id):
         con = None
         try:
-            sql = "delete from status where keg_id = ?"
-            con = self.connect()
-            cur = con.cursor()
-            cur.executemany(sql, [(keg_id)])
-            con.commit()
+            sql = "delete from status where keg_id = " + str(keg_id) + ";"
+            _ = self.execute(sql)
             return True
         except:
             self.log_error("Error deleting a user.")
