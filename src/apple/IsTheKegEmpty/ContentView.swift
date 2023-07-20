@@ -78,7 +78,10 @@ struct ContentView: View {
 					.bold()
 					.padding()
 					.font(Font.system(size: 36, design: .default))
-				
+					.onSubmit {
+						let _ = self.authVM.login(username: self.email, password: self.password)
+					}
+
 				// Password Confirmation
 				if self.creatingNewLogin == true {
 					Text("Password Confirmation")
@@ -90,8 +93,12 @@ struct ContentView: View {
 						.bold()
 						.padding()
 						.font(Font.system(size: 36, design: .default))
+						.onSubmit {
+							let _ = self.authVM.createLogin(username: self.email, password1: self.password, password2: self.passwordConfirmation, realname: self.realname)
+						}
+					let _ = self.authVM.login(username: self.email, password: self.password)
 				}
-				
+
 				// Login button
 				if self.creatingNewLogin == false {
 					Button {
