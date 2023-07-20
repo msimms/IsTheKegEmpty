@@ -146,7 +146,7 @@ class ApiClient {
 	}
 	
 	func isLoggedIn(token: String) -> Bool {
-		let urlStr = String(format: "%@://%@/%@?%@", BROADCAST_PROTOCOL, BROADCAST_HOSTNAME, REMOTE_API_IS_LOGGED_IN_URL, token)
+		let urlStr = String(format: "%@://%@/%@?%@=%@", BROADCAST_PROTOCOL, BROADCAST_HOSTNAME, REMOTE_API_IS_LOGGED_IN_URL, PARAM_SESSION_TOKEN, token)
 		return self.makeRequest(url: urlStr, method: "GET", data: [:])
 	}
 	
