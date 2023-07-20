@@ -12,7 +12,7 @@ class AuthVM : ObservableObject {
 	@Published var loginStatus: LoginStatus = LoginStatus.LOGIN_STATUS_UNKNOWN
 
 	init() {
-		let _ = self.isLoggedIn()
+		//let _ = self.isLoggedIn()
 
 		NotificationCenter.default.addObserver(self, selector: #selector(self.loginStatusUpdated), name: Notification.Name(rawValue: NOTIFICATION_NAME_LOGIN_CHECKED), object: nil)
 		NotificationCenter.default.addObserver(self, selector: #selector(self.loginProcessed), name: Notification.Name(rawValue: NOTIFICATION_NAME_LOGIN_PROCESSED), object: nil)

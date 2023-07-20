@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "168637_A beer mug that is half full against a plain white_xl-beta-v2-2-2 2.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -41,11 +42,13 @@
       "size" : "256x256"
     },
     {
+      "filename" : "168637_A beer mug that is half full against a plain white_xl-beta-v2-2-2.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "256x256"
     },
     {
+      "filename" : "168637_A beer mug that is half full against a plain white_xl-beta-v2-2-2 1.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "512x512"
