@@ -96,7 +96,6 @@ struct ContentView: View {
 						.onSubmit {
 							let _ = self.authVM.createLogin(username: self.email, password1: self.password, password2: self.passwordConfirmation, realname: self.realname)
 						}
-					let _ = self.authVM.login(username: self.email, password: self.password)
 				}
 
 				// Login button
