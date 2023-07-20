@@ -202,7 +202,7 @@ class KegDatabase(SqliteDatabase):
         readings = []
         con = None
         try:
-            sql = "select reading, reading_time from status where keg_id = " + str(keg_id) + ";"
+            sql = "select reading, reading_time from status where keg_id = '" + str(keg_id) + "';"
             res = self.execute(sql)
             for row in res:
                 readings.append(row)
@@ -217,7 +217,7 @@ class KegDatabase(SqliteDatabase):
 
     def delete_readings(self, keg_id):
         """Delete method for a user."""
-        sql = "delete from status where keg_id = " + str(keg_id) + ";"
+        sql = "delete from status where keg_id = '" + str(keg_id) + "';"
         _ = self.execute(sql)
         return True
     
@@ -245,7 +245,7 @@ class KegDatabase(SqliteDatabase):
         """Returns username, expiry for the given token."""
         con = None
         try:
-            sql = "select username, expiry from session_token where session_token = " + str(session_token) + ";"
+            sql = "select username, expiry from session_token where token = '" + str(session_token) + "';"
             res = self.execute(sql)
             for row in res:
                 return row[0], row[1]
@@ -260,7 +260,7 @@ class KegDatabase(SqliteDatabase):
 
     def delete_session_token(self, session_token):
         """Delete method for a user."""
-        sql = "delete from session_token where session_token = " + str(session_token) + ";"
+        sql = "delete from session_token where token = '" + str(session_token) + "';"
         _ = self.execute(sql)
         return True
 
