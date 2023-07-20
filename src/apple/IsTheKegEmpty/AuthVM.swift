@@ -62,24 +62,32 @@ class AuthVM : ObservableObject {
 	}
 	
 	@objc func loginProcessed(notification: NSNotification) {
-		if let data = notification.object as? Dictionary<String, AnyObject> {
-			if let responseCode = data[KEY_NAME_RESPONSE_CODE] as? HTTPURLResponse {
+		var success = false
 
-				// Request was valid.
-				if responseCode.statusCode == 200 {
-
-					// Check the session token.
-					if let responseData = data[KEY_NAME_RESPONSE_DATA] as? Dictionary<String, Any> {
-						if let sessionToken = responseData[PARAM_SESSION_TOKEN] as? String {
+		do {
+			if let data = notification.object as? Dictionary<String, AnyObject> {
+				if let responseCode = data[KEY_NAME_RESPONSE_CODE] as? HTTPURLResponse {
+					
+					// Request was valid.
+					if responseCode.statusCode == 200, let responseData = data[KEY_NAME_RESPONSE_DATA] as? Data {
+						if let responseDict = try JSONSerialization.jsonObject(with: responseData, options: []) as? Dictionary<String, Any> {
+							if let sessionToken = responseDict[PARAM_SESSION_TOKEN] as? String {
+								self.setSessionToken(token: sessionToken)
+								DispatchQueue.main.async { self.loginStatus = LoginStatus.LOGIN_STATUS_SUCCESS }
+								success = true
+							}
 						}
 					}
-					DispatchQueue.main.async { self.loginStatus = LoginStatus.LOGIN_STATUS_SUCCESS }
-				}
-				else {
-					DispatchQueue.main.async { self.loginStatus = LoginStatus.LOGIN_STATUS_FAILURE }
-					self.loginErrorReceived = true
 				}
 			}
+		}
+		catch {
+			NSLog(error.localizedDescription)
+		}
+
+		if success == false {
+			DispatchQueue.main.async { self.loginStatus = LoginStatus.LOGIN_STATUS_FAILURE }
+			self.loginErrorReceived = true
 		}
 	}
 	
