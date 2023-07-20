@@ -30,6 +30,8 @@ let PARAM_PASSWORD = "password"
 let PARAM_PASSWORD1 = "password1"
 let PARAM_PASSWORD2 = "password2"
 let PARAM_REALNAME = "realname"
+let PARAM_SESSION_TOKEN = "session_token"
+let PARAM_SESSION_EXPIRY = "session_expiry"
 
 enum LoginStatus : Int {
 	case LOGIN_STATUS_UNKNOWN = 0
@@ -143,8 +145,8 @@ class ApiClient {
 		return self.makeRequest(url: urlStr, method: "POST", data: postDict)
 	}
 	
-	func isLoggedIn() -> Bool {
-		let urlStr = String(format: "%@://%@/%@", BROADCAST_PROTOCOL, BROADCAST_HOSTNAME, REMOTE_API_IS_LOGGED_IN_URL)
+	func isLoggedIn(token: String) -> Bool {
+		let urlStr = String(format: "%@://%@/%@?%@", BROADCAST_PROTOCOL, BROADCAST_HOSTNAME, REMOTE_API_IS_LOGGED_IN_URL, token)
 		return self.makeRequest(url: urlStr, method: "GET", data: [:])
 	}
 	
