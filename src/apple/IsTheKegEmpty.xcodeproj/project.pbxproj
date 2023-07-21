@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		27091AD02A6B316C0013AD48 /* NewKegView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27091ACF2A6B316C0013AD48 /* NewKegView.swift */; };
 		27E89B562A4E1E1A004398DE /* IsTheKegEmptyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E89B552A4E1E1A004398DE /* IsTheKegEmptyApp.swift */; };
 		27E89B582A4E1E1A004398DE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E89B572A4E1E1A004398DE /* ContentView.swift */; };
 		27E89B5A2A4E1E1A004398DE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 27E89B592A4E1E1A004398DE /* Assets.xcassets */; };
@@ -38,6 +39,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		27091ACF2A6B316C0013AD48 /* NewKegView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewKegView.swift; sourceTree = "<group>"; };
 		27E89B522A4E1E1A004398DE /* IsTheKegEmpty.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IsTheKegEmpty.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		27E89B552A4E1E1A004398DE /* IsTheKegEmptyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IsTheKegEmptyApp.swift; sourceTree = "<group>"; };
 		27E89B572A4E1E1A004398DE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -109,6 +111,7 @@
 				27E89B802A4E1FB6004398DE /* InventoryVM.swift */,
 				27E89B552A4E1E1A004398DE /* IsTheKegEmptyApp.swift */,
 				27E89B822A4E20FC004398DE /* KegView.swift */,
+				27091ACF2A6B316C0013AD48 /* NewKegView.swift */,
 				27E89B592A4E1E1A004398DE /* Assets.xcassets */,
 				27E89B5B2A4E1E1A004398DE /* IsTheKegEmpty.entitlements */,
 				27E89B5C2A4E1E1A004398DE /* Preview Content */,
@@ -276,6 +279,7 @@
 				27E89B562A4E1E1A004398DE /* IsTheKegEmptyApp.swift in Sources */,
 				27E89B832A4E20FD004398DE /* KegView.swift in Sources */,
 				27E89B812A4E1FB6004398DE /* InventoryVM.swift in Sources */,
+				27091AD02A6B316C0013AD48 /* NewKegView.swift in Sources */,
 				27E89B872A4F7A09004398DE /* ApiClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -331,13 +331,13 @@ class UserMgr(object):
     def validate_session(self, session_token):
         _, expiry = self.database.retrieve_session_token(session_token)
         if expiry is not None:
-            now = time.time()
 
-            # Token is still valid.
+            # Is the token still valid.
+            now = time.time()
             if now < expiry:
                 return True
 
-            # Token is expired, so delete it
+            # Token is expired, so delete it.
             self.database.delete_session_token(session_token)
         return False
 
