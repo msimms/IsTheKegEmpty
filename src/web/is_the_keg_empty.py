@@ -332,7 +332,13 @@ class UserMgr(object):
         _, expiry = self.database.retrieve_session_token(session_token)
         if expiry is not None:
             now = time.time()
-            return now < expiry
+
+            # Token is still valid.
+            if now < expiry:
+                return True
+
+            # Token is expired, so delete it
+            self.database.delete_session_token(session_token)
         return False
 
 class App(object):
