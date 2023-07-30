@@ -28,19 +28,27 @@ struct ContentView: View {
 				VStack(alignment: .center) {
 
 					// List of kegs
-					List(self.inventoryVM.listKegs(), id: \.self) { item in
-						NavigationLink(destination: KegView()) {
-							HStack() {
-								Image(systemName: "mug")
-									.frame(width: 32)
-								VStack(alignment: .leading) {
-								}
-								.onAppear() {
+					let kegs = self.inventoryVM.listKegs()
+					if kegs.count > 0 {
+						List(kegs, id: \.self) { item in
+							NavigationLink(destination: KegView()) {
+								HStack() {
+									Image(systemName: "mug")
+										.frame(width: 32)
+									VStack(alignment: .leading) {
+									}
+									.onAppear() {
+									}
 								}
 							}
 						}
+						.listStyle(.plain)
 					}
-					.listStyle(.plain)
+					else {
+						Text("No kegs")
+							.font(Font.system(size: 36, design: .default))
+							.bold()
+					}
 
 					// Add New Keg button
 					VStack {
