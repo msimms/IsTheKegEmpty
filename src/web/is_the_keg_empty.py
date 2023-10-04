@@ -415,10 +415,10 @@ class App(object):
         # Decode and validate the required parameters.
         email = unquote_plus(values[PARAM_USERNAME])
         if not InputChecker.is_email_address(email):
-            raise ApiException.ApiMalformedRequestException("Invalid email address.")
+            raise ApiMalformedRequestException("Invalid email address.")
         realname = unquote_plus(values[PARAM_REALNAME])
         if not InputChecker.is_valid_decoded_str(realname):
-            raise ApiException.ApiMalformedRequestException("Invalid name.")
+            raise ApiMalformedRequestException("Invalid name.")
         password1 = unquote_plus(values[PARAM_PASSWORD1])
         password2 = unquote_plus(values[PARAM_PASSWORD2])
 
