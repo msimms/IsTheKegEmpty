@@ -21,7 +21,7 @@ g_app = None
 g_flask_app = flask.Flask(__name__)
 
 ERROR_LOG = 'error.log'
-MIN_PASSWORD_LEN  = 8
+MIN_PASSWORD_LEN = 8
 HTML_DIR = 'html'
 PARAM_KEG_ID = 'keg_id'
 PARAM_READING = 'reading'
@@ -356,6 +356,16 @@ class App(object):
         logger = logging.getLogger()
         logger.error(log_str)
 
+    def error404(self):
+        """Renders the index page."""
+        try:
+            html_file = os.path.join(self.root_dir, HTML_DIR, '404.html')
+            my_template = Template(filename=html_file, module_directory=self.tempmod_dir)
+            return my_template.render(root_url=self.root_url)
+        except:
+            self.log_error("Unhandled Exception")
+        return ""
+
     def index(self):
         """Renders the index page."""
         try:
@@ -561,6 +571,11 @@ class App(object):
         if verb == 'DELETE':
             return self.handle_api_1_0_delete_request(request, values)
         return False, ""
+
+@g_flask_app.errorhandler(404)
+def page_not_found(e):
+    global g_app
+    return g_app.error404()
 
 @g_flask_app.route('/')
 def index():
