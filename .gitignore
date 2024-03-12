@@ -168,3 +168,6 @@ dmypy.json
 # FreeCAD
 *.FCBak
 
+# Blender
+*.blend1
+
