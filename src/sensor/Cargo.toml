@@ -1,6 +1,7 @@
 [package]
 name = "scale"
 version = "0.1.0"
+edition = "2021"
 
 [target.thumbv6m-none-eabi]
 runner = "probe-run --chip RP2040"
