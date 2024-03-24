@@ -66,5 +66,16 @@ fn main() -> ! {
 
     // Configure the pins for reading the load cells.
 
-    loop { }
+    loop {
+        // Read from the first sensor.
+
+        // Read from the second sensor.
+
+        // Convert the readings to weight.
+
+        // Send to the web app.
+
+        // Wait.
+        delay.delay_ms(1000);
+    }
 }
