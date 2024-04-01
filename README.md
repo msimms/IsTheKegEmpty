@@ -6,9 +6,10 @@
 
 The CAD file is provided in the repository. It should be printed using a material strong enough to hold the weight of the keg.
 
-### Mount the load cells
+### Mount the load cells and load cell amplifiers
 
-https://www.adafruit.com/product/4543
+Load Cells: https://www.adafruit.com/product/4543
+HX711 Load Cell Amps: https://www.amazon.com/dp/B07SGPX7ZH
 
 ### Configure the Scale Firmware Build
 
