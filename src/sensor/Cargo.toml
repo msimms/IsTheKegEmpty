@@ -3,18 +3,33 @@ name = "scale"
 version = "0.1.0"
 edition = "2021"
 
+[build]
+target = "thumbv6m-none-eabi"
+
 [target.thumbv6m-none-eabi]
-runner = "probe-run --chip RP2040"
+runner = "probe-rs run --chip=RP2040"
+rustflags = ["-C", "link-args=-Tlink.x -Tlink-rp.x -Tdefmt.x"]
+
+[env]
+DEFMT_LOG = "debug"
 
 [dependencies]
-rp2040-hal = "0.7.0"
-panic-halt = "0.2.0"
-embedded-hal = { version = "0.2.5", features = ["unproven"] }
-cortex-m = "0.7.2"
-cortex-m-rt = "0.7"
-rp2040-boot2 = "0.2.1"
+cortex-m-rt = "0.7.3"
 hx711 = "*"
 
-[[bin]]
-name = "scale"
-path = "src/main.rs"
+[dependencies.embassy-executor]
+git = "https://github.com/embassy-rs/embassy.git"
+rev = "c3ef98a"
+features = ["nightly", "arch-cortex-m", "executor-thread", "integrated-timers"]
+
+[dependencies.embassy-rp]
+git = "https://github.com/embassy-rs/embassy.git"
+rev = "c3ef98a"
+features = ["critical-section-impl", "time-driver"]
+
+[dependencies.embassy-time]
+git = "https://github.com/embassy-rs/embassy.git"
+rev = "c3ef98a"
+
+[dependencies.panic-probe]
+version = "0.3.1"

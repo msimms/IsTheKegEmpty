@@ -1,0 +1,5 @@
+# rust-toolchain.toml
+
+[toolchain]
+channel = "nightly-2023-10-02"
+targets = ["thumbv6m-none-eabi"]
