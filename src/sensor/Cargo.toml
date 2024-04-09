@@ -3,19 +3,11 @@ name = "scale"
 version = "0.1.0"
 edition = "2021"
 
-[build]
-target = "thumbv6m-none-eabi"
-
-[target.thumbv6m-none-eabi]
-runner = "probe-rs run --chip=RP2040"
-rustflags = ["-C", "link-args=-Tlink.x -Tlink-rp.x -Tdefmt.x"]
-
-[env]
-DEFMT_LOG = "debug"
-
 [dependencies]
+hx711 = "0.6.0"
 cortex-m-rt = "0.7.3"
-hx711 = "*"
+defmt = "0.3.5"
+defmt-rtt = "0.4.0"
 
 [dependencies.embassy-executor]
 git = "https://github.com/embassy-rs/embassy.git"
@@ -33,3 +25,4 @@ rev = "c3ef98a"
 
 [dependencies.panic-probe]
 version = "0.3.1"
+features = ["print-defmt"]
