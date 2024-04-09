@@ -174,3 +174,5 @@ dmypy.json
 # Rust
 *.lock
 
+# macOS
+*.DS_Store
