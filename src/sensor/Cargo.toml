@@ -8,6 +8,7 @@ hx711 = "0.6.0"
 cortex-m-rt = "0.7.3"
 defmt = "0.3.5"
 defmt-rtt = "0.4.0"
+#picoserve = "0.11.0"
 
 [dependencies.embassy-executor]
 git = "https://github.com/embassy-rs/embassy.git"
