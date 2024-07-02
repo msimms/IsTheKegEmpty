@@ -8,6 +8,8 @@ use embassy_rp::gpio::{Level, Pull, Input, Output};
 use embassy_time::{Duration, Timer};
 use panic_probe as _;
 
+pub mod client;
+
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     defmt::info!("Initializing...");
