@@ -13,7 +13,7 @@ let REMOTE_API_CREATE_LOGIN_URL = "api/1.0/create_login"
 let REMOTE_API_IS_LOGGED_IN_URL = "api/1.0/login_status"
 let REMOTE_API_LOGOUT_URL = "api/1.0/logout"
 let REMOTE_API_KEG_STATUS_URL = "api/1.0/keg_status"
-let REMOTE_API_REGISTER_KEG_URL = "api/1.0/register_keg"
+let REMOTE_API_REGISTER_DEVICE_URL = "api/1.0/register_device"
 let REMOTE_API_UPDATE_KEG_WEIGHT_URL = "api/1.0/update_keg_weight"
 
 let KEY_NAME_URL = "URL"
