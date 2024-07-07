@@ -634,6 +634,7 @@ def main():
 
     # Parse command line options.
     parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, action="store", default=5000, help="The port on which to bind.", required=False)
 
     try:
         args = parser.parse_args()
@@ -646,7 +647,7 @@ def main():
 
     root_dir = os.path.dirname(os.path.abspath(__file__))
     g_app = App("", root_dir)
-    g_flask_app.run()
+    g_flask_app.run(port=args.port)
 
 if __name__=="__main__":
 	main()
