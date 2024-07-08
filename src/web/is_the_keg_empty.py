@@ -348,6 +348,7 @@ class App(object):
         self.database = AppSqlDatabase(root_dir, "sensor.db")
         self.database.create_tables()
         self.root_url = root_url
+        self.root_dir = root_dir
         self.user_mgr = UserMgr(self.database)
         super(App, self).__init__()
 
@@ -357,7 +358,7 @@ class App(object):
         logger.error(log_str)
 
     def error404(self):
-        """Renders the index page."""
+        """Renders the 404 page."""
         try:
             html_file = os.path.join(self.root_dir, HTML_DIR, '404.html')
             my_template = Template(filename=html_file, module_directory=self.tempmod_dir)
@@ -553,7 +554,7 @@ class App(object):
             return self.handle_api_logout(values)
         if request == 'register_device':
             return self.handle_api_register_device(values)
-        if request == 'update_keg_weight':
+        if request == 'update_device_status':
             return self.handle_api_update_device_status(values)
         return False, ""
 
@@ -578,6 +579,7 @@ def page_not_found(e):
     return g_app.error404()
 
 @g_flask_app.route('/')
+@g_flask_app.route('/index')
 def index():
     """Renders the index page."""
     global g_app
