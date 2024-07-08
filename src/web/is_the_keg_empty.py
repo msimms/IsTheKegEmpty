@@ -23,7 +23,7 @@ g_flask_app = flask.Flask(__name__)
 ERROR_LOG = 'error.log'
 MIN_PASSWORD_LEN = 8
 HTML_DIR = 'html'
-PARAM_DEVICE_ID = 'keg_id'
+PARAM_DEVICE_ID = 'device_id'
 PARAM_READING = 'reading'
 PARAM_READING_TIME = 'reading_time'
 PARAM_USERNAME = "username" # Login name for a user
@@ -120,7 +120,7 @@ class SqliteDatabase(Database):
                 con.close()
         return None
 
-class KegDatabase(SqliteDatabase):
+class AppSqlDatabase(SqliteDatabase):
     """Database implementation."""
 
     def __init__(self, root_dir, file_name):
@@ -129,7 +129,7 @@ class KegDatabase(SqliteDatabase):
     def create_tables(self):
         sql = "create table user (id integer primary key, username text, realname text, passhash text);"
         self.execute(sql)
-        sql = "create table status (id integer primary key, keg_id text, reading double, reading_time unsigned big int);"
+        sql = "create table status (id integer primary key, device_id text, reading double, reading_time unsigned big int);"
         self.execute(sql)
         sql = "create table session_token (id integer primary key, username text, token text, expiry unsigned big int);"
         self.execute(sql)
@@ -198,11 +198,11 @@ class KegDatabase(SqliteDatabase):
 
     def retrieve_readings(self, device_id):
         """Retrieve method for a user."""
-        """Returns reading, reading_time for the given keg."""
+        """Returns reading, reading_time for the given device."""
         readings = []
         con = None
         try:
-            sql = "select reading, reading_time from status where keg_id = '" + str(device_id) + "';"
+            sql = "select reading, reading_time from status where device_id = '" + str(device_id) + "';"
             res = self.execute(sql)
             for row in res:
                 readings.append(row)
@@ -217,7 +217,7 @@ class KegDatabase(SqliteDatabase):
 
     def delete_readings(self, device_id):
         """Delete method for a user."""
-        sql = "delete from status where keg_id = '" + str(device_id) + "';"
+        sql = "delete from status where device_id = '" + str(device_id) + "';"
         _ = self.execute(sql)
         return True
     
@@ -345,7 +345,7 @@ class App(object):
     """Web app logic is stored here to keep it compartmentalized from the framework logic."""
 
     def __init__(self, root_url, root_dir):
-        self.database = KegDatabase(root_dir, "keg.db")
+        self.database = AppSqlDatabase(root_dir, "sensor.db")
         self.database.create_tables()
         self.root_url = root_url
         self.user_mgr = UserMgr(self.database)
@@ -480,12 +480,12 @@ class App(object):
         self.user_mgr.delete_session(session_token)
         return True, ""
 
-    def handle_api_keg_status(self, values):
+    def handle_api_device_status(self, values):
         # Required parameters.
         if PARAM_SESSION_TOKEN not in values:
             raise ApiAuthenticationException("Session token not specified.")
         if PARAM_DEVICE_ID not in values:
-            raise ApiAuthenticationException("Keg ID not specified.")
+            raise ApiAuthenticationException("Device ID not specified.")
 
         # Validate the required parameters.
         session_token = values[PARAM_SESSION_TOKEN]
@@ -493,7 +493,7 @@ class App(object):
             raise ApiAuthenticationException("Session token is invalid.")
         device_id = values[PARAM_DEVICE_ID]
         if not InputChecker.is_uuid(device_id):
-            raise ApiAuthenticationException("Keg ID is invalid.")
+            raise ApiAuthenticationException("Device ID is invalid.")
 
         # Query the database.
         readings = self.database.retrieve_readings(device_id)
@@ -518,7 +518,7 @@ class App(object):
         if PARAM_SESSION_TOKEN not in values:
             raise ApiAuthenticationException("Session token not specified.")
         if PARAM_DEVICE_ID not in values:
-            raise ApiAuthenticationException("Keg ID not specified.")
+            raise ApiAuthenticationException("Device ID not specified.")
 
         # Validate the required parameters.
         session_token = values[PARAM_SESSION_TOKEN]
@@ -526,7 +526,7 @@ class App(object):
             raise ApiAuthenticationException("Session token is invalid.")
         device_id = values[PARAM_DEVICE_ID]
         if not InputChecker.is_uuid(device_id):
-            raise ApiAuthenticationException("Keg ID is invalid.")
+            raise ApiAuthenticationException("Device ID is invalid.")
 
         reading = values[PARAM_READING]
         reading_time = values[PARAM_READING_TIME]
@@ -539,8 +539,8 @@ class App(object):
         """Called to parse a version 1.0 API GET request."""
         if request == 'login_status':
             return self.handle_api_login_status(values)
-        if request == 'keg_status':
-            return self.handle_api_keg_status(values)
+        if request == 'device_status':
+            return self.handle_api_device_status(values)
         return False, ""
 
     def handle_api_1_0_post_request(self, request, values):
