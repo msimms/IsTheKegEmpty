@@ -7,6 +7,7 @@ import json
 import logging
 import mako
 import os
+import pymongo
 import sqlite3
 import sys
 import time
@@ -23,6 +24,7 @@ g_flask_app = flask.Flask(__name__)
 ERROR_LOG = 'error.log'
 MIN_PASSWORD_LEN = 8
 HTML_DIR = 'html'
+DATABASE_ID_KEY = "_id"
 PARAM_DEVICE_ID = 'device_id'
 PARAM_READING = 'reading'
 PARAM_READING_TIME = 'reading_time'
@@ -33,6 +35,8 @@ PARAM_PASSWORD1 = "password1" # User's password when creating an account
 PARAM_PASSWORD2 = "password2" # User's confirmation password when creating an account
 PARAM_SESSION_TOKEN = "session_token"
 PARAM_SESSION_EXPIRY = "session_expiry"
+PARAM_HASH_KEY = "hash" # Password hash
+PARAM_DEVICES = "devices"
 
 class ApiException(Exception):
     """Exception thrown by a REST API."""
@@ -62,6 +66,16 @@ class ApiNotLoggedInException(ApiException):
 
     def __init__(self):
         ApiException.__init__(self, 403, "Not logged in")
+
+class DatabaseException(Exception):
+    """Exception thrown by a REST API when the user is not logged in."""
+
+    def __init__(self, *args):
+        Exception.__init__(self, args)
+
+    def __init__(self, message):
+        self.message = message
+        Exception.__init__(self, message)
 
 class Database(object):
     """Base class for a database. Encapsulates common functionality."""
@@ -263,6 +277,78 @@ class AppSqlDatabase(SqliteDatabase):
         sql = "delete from session_token where token = '" + str(session_token) + "';"
         _ = self.execute(sql)
         return True
+
+def insert_into_collection(collection, doc):
+    """Handles differences in document insertion between pymongo 3 and 4."""
+    if int(pymongo.__version__[0]) < 4:
+        result = collection.insert(doc)
+    else:
+        result = collection.insert_one(doc)
+    return result is not None and result.inserted_id is not None 
+
+def update_collection(collection, doc):
+    """Handles differences in document updates between pymongo 3 and 4."""
+    if int(pymongo.__version__[0]) < 4:
+        collection.save(doc)
+        return True
+    else:
+        query = { DATABASE_ID_KEY: doc[DATABASE_ID_KEY] }
+        new_values = { "$set" : doc }
+        result = collection.update_one(query, new_values)
+        return result.matched_count > 0 
+
+class AppMongoDatabase(Database):
+    """Mongo DB implementation of the application database."""
+
+    def __init__(self):
+        Database.Database.__init__(self)
+
+    def connect(self, database_url):
+        """Connects/creates the database"""
+        try:
+            # Connect.
+            self.conn = pymongo.MongoClient('mongodb://' + database_url + '/?uuidRepresentation=pythonLegacy')
+
+            # Database. Try the old name, if not found then create or open it with the new name.
+            db_names = self.conn.list_database_names()
+            if 'statusdb' in db_names:
+                self.database = self.conn['statusdb']
+            if self.database is None:
+                raise DatabaseException("Could not connect to MongoDB.")
+
+            # Handles to the various collections.
+            self.users_collection = self.database['users']
+            self.status_collection = self.database['status']
+            self.sessions_collection = self.database['sessions']
+        except pymongo.errors.ConnectionFailure as e:
+            raise DatabaseException("Could not connect to MongoDB: %s" % e)
+
+    #
+    # User management methods
+    #
+
+    def create_user(self, username, realname, passhash):
+        """Create method for a user."""
+        if username is None:
+            raise Exception("Unexpected empty object: username")
+        if realname is None:
+            raise Exception("Unexpected empty object: realname")
+        if passhash is None:
+            raise Exception("Unexpected empty object: passhash")
+        if len(username) == 0:
+            raise Exception("username too short")
+        if len(realname) == 0:
+            raise Exception("realname too short")
+        if len(passhash) == 0:
+            raise Exception("hash too short")
+
+        try:
+            post = { PARAM_USERNAME: username, PARAM_REALNAME: realname, PARAM_HASH_KEY: passhash, PARAM_DEVICES: [] }
+            return insert_into_collection(self.users_collection, post)
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return False
 
 class UserMgr(object):
     """Encapsulates user authentication and management."""
