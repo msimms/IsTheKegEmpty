@@ -11,7 +11,7 @@ int keyIndex = 0;            // your network key index number (needed only for W
 
 // If you don't want to use DNS (and reduce your sketch size)
 // use the numeric IP instead of the name for the server:
-char server[] = "mikesimms.net"; // name address for Google (using DNS)
+char server[] = "status.mikesimms.net"; // name address for Google (using DNS)
 const int port = 80;
 
 // Initialize the Ethernet client library with the IP address and port of the server
