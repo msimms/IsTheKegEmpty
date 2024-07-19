@@ -11,6 +11,36 @@ The CAD file is provided in the repository. It should be printed using a materia
 Load Cells: https://www.adafruit.com/product/4543
 HX711 Load Cell Amps: https://www.amazon.com/dp/B07SGPX7ZH
 
+## Build the Scale Firmware (Arduino Nano 33 IoT with Headers)
+
+### Hardware
+
+https://www.amazon.com/gp/product/B07WPFQZQ1
+
+### Add support for the board to the Arduino IDE:
+
+Tools -> Board -> Booard Manager -> Install Arduino SAMD Boards
+
+### Add supporting libraries to the Arduino IDE:
+
+Tools -> Manager Libraries
+Install the following libraries:
+* ArduinoHttpClient
+* HttpClient
+* WiFiNINA
+* AdaFruit HX711
+
+### Build and Upload the Firmware
+
+## Build the Scale Firmware (Raspberry Pi Pico W)
+
+```
+Note: This is a Second firmware option and is still under development
+```
+
+### Hardware
+https://www.amazon.com/Pico-Raspberry-Pre-Soldered-Dual-core-Processor/dp/B0BK9W4H2Q
+
 ### Configure the Scale Firmware Build
 
 ```
@@ -39,3 +69,4 @@ python3 setup.py
 ## Build the Mobile App
 
 * Open XCode
+* Build
