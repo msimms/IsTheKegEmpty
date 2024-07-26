@@ -1,5 +1,7 @@
 # IsTheKegEmpty
 
+This is a work-in-progress. Just a simple system for measuring the contents of my homebrew keg, by weight, and reporting it to a simple web server via a REST API.
+
 ## Build the Scale
 
 ### Print the Scale's Enclosure
