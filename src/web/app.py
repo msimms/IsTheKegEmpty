@@ -105,179 +105,6 @@ class Database(object):
             return ""
         return "\"" + encodable.replace("\"", "\"\"") + "\""
 
-class SqliteDatabase(Database):
-    """Abstract Sqlite database implementation."""
-
-    def __init__(self, root_dir, file_name):
-        self.db_file_name = os.path.join(root_dir, file_name)
-        Database.__init__(self)
-
-    def connect(self):
-        """Connects/opens the files."""
-        con = sqlite3.connect(self.db_file_name)
-        return con
-
-    def execute(self, sql):
-        """Executes the specified SQL query."""
-        try:
-            # Check for multiple statements, extra quotes, etc.
-            if sqlite3.complete_statement(sql) == 1:
-                con = self.connect()
-                with con:
-                    cur = con.cursor()
-                    cur.execute(sql)
-                    return cur.fetchall()
-        except:
-            self.log_error("Database error:\n\tfile = " + self.db_file_name + "\n\tsql = " + self.quote_identifier(sql))
-        finally:
-            if con:
-                con.close()
-        return None
-
-class AppSqlDatabase(SqliteDatabase):
-    """Database implementation."""
-
-    def __init__(self, root_dir, file_name):
-        SqliteDatabase.__init__(self, root_dir, file_name)
-
-    def create_tables(self):
-        sql = "create table user (id integer primary key, username text, realname text, passhash text);"
-        self.execute(sql)
-        sql = "create table status (id integer primary key, device_id text, reading double, reading_time unsigned big int);"
-        self.execute(sql)
-        sql = "create table session_token (id integer primary key, username text, token text, expiry unsigned big int);"
-        self.execute(sql)
-
-    def create_user(self, email, realname, computed_hash):
-        """Create method for a user."""
-        con = None
-        try:
-            sql = "insert into user values (NULL,?,?,?);"
-            con = self.connect()
-            cur = con.cursor()
-            cur.executemany(sql, [(email, realname, computed_hash)])
-            con.commit()
-            return True
-        except sqlite3.Error as e:
-            self.log_error(e)
-        except:
-            self.log_error("Error creating a user.")
-        finally:
-            if con is not None:
-                con.close()
-        return False
-
-    def retrieve_user(self, email):
-        """Retrieve method for a user."""
-        """Returns passhash, realname for the given user."""
-        con = None
-        try:
-            sql = "select passhash, realname from user where username = '" + str(email) + "' limit 1;"
-            res = self.execute(sql)
-            for row in res:
-                return row[0], row[1]
-        except sqlite3.Error as e:
-            self.log_error(e)
-        except:
-            self.log_error("Error retrieving a user.")
-        finally:
-            if con is not None:
-                con.close()
-        return None, None
-
-    def delete_user(self, email):
-        """Delete method for a user."""
-        sql = "delete from user where username = '" + str(email) + "';"
-        _ = self.execute(sql)
-        return True
-
-    def create_reading(self, device_id, reading, reading_time):
-        """Create method for a reading."""
-        con = None
-        try:
-            sql = "insert into status values (NULL,?,?,?);"
-            con = self.connect()
-            cur = con.cursor()
-            cur.executemany(sql, [(device_id, reading, reading_time)])
-            con.commit()
-            return True
-        except sqlite3.Error as e:
-            self.log_error(e)
-        except:
-            self.log_error("Error creating a reading.")
-        finally:
-            if con is not None:
-                con.close()
-        return False
-
-    def retrieve_readings(self, device_id):
-        """Retrieve method for a user."""
-        """Returns reading, reading_time for the given device."""
-        readings = []
-        con = None
-        try:
-            sql = "select reading, reading_time from status where device_id = '" + str(device_id) + "';"
-            res = self.execute(sql)
-            for row in res:
-                readings.append(row)
-        except sqlite3.Error as e:
-            self.log_error(e)
-        except:
-            self.log_error("Error retrieving readings.")
-        finally:
-            if con is not None:
-                con.close()
-        return readings
-
-    def delete_readings(self, device_id):
-        """Delete method for a user."""
-        sql = "delete from status where device_id = '" + str(device_id) + "';"
-        _ = self.execute(sql)
-        return True
-    
-    def create_session_token(self, email, session_token, expiry):
-        """Create method for a session token."""
-        con = None
-        try:
-            sql = "insert into session_token values (NULL,?,?,?);"
-            con = self.connect()
-            cur = con.cursor()
-            cur.executemany(sql, [(email, session_token, expiry)])
-            con.commit()
-            return True
-        except sqlite3.Error as e:
-            self.log_error(e)
-        except:
-            self.log_error("Error creating a session token.")
-        finally:
-            if con is not None:
-                con.close()
-        return False
-
-    def retrieve_session_token(self, session_token):
-        """Retrieve method for a user."""
-        """Returns username, expiry for the given token."""
-        con = None
-        try:
-            sql = "select username, expiry from session_token where token = '" + str(session_token) + "';"
-            res = self.execute(sql)
-            for row in res:
-                return row[0], row[1]
-        except sqlite3.Error as e:
-            self.log_error(e)
-        except:
-            self.log_error("Error retrieving a session token.")
-        finally:
-            if con is not None:
-                con.close()
-        return None, None
-
-    def delete_session_token(self, session_token):
-        """Delete method for a user."""
-        sql = "delete from session_token where token = '" + str(session_token) + "';"
-        _ = self.execute(sql)
-        return True
-
 def insert_into_collection(collection, doc):
     """Handles differences in document insertion between pymongo 3 and 4."""
     if int(pymongo.__version__[0]) < 4:
@@ -301,18 +128,16 @@ class AppMongoDatabase(Database):
     """Mongo DB implementation of the application database."""
 
     def __init__(self):
-        Database.Database.__init__(self)
+        Database.__init__(self)
 
-    def connect(self, database_url):
+    def connect(self):
         """Connects/creates the database"""
         try:
             # Connect.
-            self.conn = pymongo.MongoClient('mongodb://' + database_url + '/?uuidRepresentation=pythonLegacy')
+            self.conn = pymongo.MongoClient('mongodb://127.0.0.1/?uuidRepresentation=pythonLegacy')
 
-            # Database. Try the old name, if not found then create or open it with the new name.
-            db_names = self.conn.list_database_names()
-            if 'statusdb' in db_names:
-                self.database = self.conn['statusdb']
+            # Database.
+            self.database = self.conn['devicestatusdb']
             if self.database is None:
                 raise DatabaseException("Could not connect to MongoDB.")
 
@@ -431,8 +256,8 @@ class App(object):
     """Web app logic is stored here to keep it compartmentalized from the framework logic."""
 
     def __init__(self, root_url, root_dir):
-        self.database = AppSqlDatabase(root_dir, "sensor.db")
-        self.database.create_tables()
+        self.database = AppMongoDatabase()
+        self.database.connect()
         self.root_url = root_url
         self.root_dir = root_dir
         self.user_mgr = UserMgr(self.database)
@@ -722,7 +547,7 @@ def main():
 
     # Parse command line options.
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, action="store", default=5000, help="The port on which to bind.", required=False)
+    parser.add_argument("--port", type=int, action="store", default=5555, help="The port on which to bind.", required=False)
 
     try:
         args = parser.parse_args()
