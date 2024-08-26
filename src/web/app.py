@@ -261,6 +261,8 @@ class App(object):
         self.root_url = root_url
         self.root_dir = root_dir
         self.user_mgr = UserMgr(self.database)
+        self.tempfile_dir = os.path.join(self.root_dir, 'tempfile')
+        self.tempmod_dir = os.path.join(self.root_dir, 'tempmod3')
         super(App, self).__init__()
 
     def log_error(self, log_str):
@@ -274,6 +276,8 @@ class App(object):
             html_file = os.path.join(self.root_dir, HTML_DIR, '404.html')
             my_template = Template(filename=html_file, module_directory=self.tempmod_dir)
             return my_template.render(root_url=self.root_url)
+        except Exception as e:
+            self.log_error(e)
         except:
             self.log_error("Unhandled Exception")
         return ""
@@ -527,6 +531,9 @@ def api(version, method):
         else:
             code = 400
     except ApiException as e:
+        g_app.log_error(e.message)
+        code = e.code
+    except Exception as e:
         g_app.log_error(e.message)
         code = e.code
     except:
