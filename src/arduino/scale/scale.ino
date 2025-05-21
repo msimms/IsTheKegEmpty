@@ -24,6 +24,8 @@ Adafruit_SSD1306 g_display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 #define LOGO_HEIGHT 32
 #define LOGO_WIDTH  32
+#define LEFT_LOGO_MARGIN 4
+#define LEFT_TEXT_MARGIN (LEFT_LOGO_MARGIN + LOGO_WIDTH + 4)
 static const unsigned char PROGMEM g_logo_bmp[] =
 { 0x00, 0x00, 0x00, 0x00,
   0x00, 0x05, 0xA0, 0x00,
@@ -75,16 +77,24 @@ HX711 g_hx711_2;
 HX711 g_hx711_3;
 HX711 g_hx711_4;
 
+// Will return this as an error code when reading an HX711.
+#define ERROR_NUM -1
+
 // Configuration values.
 float g_tare_value = 0.0;
 float g_calibration_value = 0.0;
 float g_calibration_weight = 0.0;
 
+/// @function float_is_valid
+bool float_is_valid(float num) {
+  return num >= 0.001;
+}
+
 /// @function draw_logo
 void draw_logo(void) {
   g_display.clearDisplay();
   g_display.drawBitmap(
-    (g_display.width()  - LOGO_WIDTH ) / 2,
+    LEFT_LOGO_MARGIN,
     ((g_display.height() - LOGO_HEIGHT) / 2) + 2,
     g_logo_bmp, LOGO_WIDTH, LOGO_HEIGHT, 1);
   g_display.display();
@@ -92,22 +102,33 @@ void draw_logo(void) {
 
 /// @function updateDisplay
 void updateDisplay(char* msg) {
-  g_display.clearDisplay();
+  draw_logo();
   g_display.setTextSize(1); // X pixel scale
   g_display.setTextColor(SSD1306_WHITE); // Draw white text
-  g_display.setCursor(0,16); // Start at top-left corner
+  g_display.setCursor(LEFT_TEXT_MARGIN, 14); // Start at top-left corner, after the logo
   g_display.println(msg);
   g_display.display();
 }
 
 /// @function updateDisplayWithWeight
 void updateDisplayWithWeight(char* msg) {
-  g_display.clearDisplay();
+  draw_logo();
   g_display.setTextSize(2); // X pixel scale
   g_display.setTextColor(SSD1306_WHITE); // Draw white text
-  g_display.setCursor(0,14); // Start at top-left corner
+  g_display.setCursor(LEFT_TEXT_MARGIN, 14); // Start at top-left corner, after the logo
   g_display.println(msg);
   g_display.display();
+}
+
+/// @function setup_display
+void setup_display(void) {
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if (g_display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    draw_logo();
+  }
+  else {
+    Serial.println("Error: SSD1306 allocation failed!");
+  }
 }
 
 /// @function setup_wifi
@@ -128,7 +149,6 @@ void setup_wifi() {
   // You're connected now, so print out the data.
   Serial.println("Wifi connected!");
 }
-
 
 /// @function print_wifi_status
 void print_wifi_status() {
@@ -169,55 +189,53 @@ void post_status(String str) {
   }
 }
 
-/// @function setup_display
-void setup_display(void) {
-  Serial.println("Setting up the display...");
-
-  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  if (g_display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-
-    // Success!
-    Serial.println("Display setup!");
-
-    // Initialize the display with the logo.
-    draw_logo();
-  }
-  else {
-    Serial.println("Error: SSD1306 allocation failed!");
-  }
-}
-
 /// @function setup_scale
 /// Called once to initializae all of the HX711s.
 void setup_scale(void) {
-  Serial.println("Setting up the scale...");
-  Serial.println("Setting HX711 #1...");
   g_hx711_1.begin(LOADCELL1_DOUT_PIN, LOADCELL1_SCK_PIN);
-  Serial.println("Setting HX711 #2...");
   g_hx711_2.begin(LOADCELL2_DOUT_PIN, LOADCELL2_SCK_PIN);
-  Serial.println("Setting HX711 #3...");
   g_hx711_3.begin(LOADCELL3_DOUT_PIN, LOADCELL3_SCK_PIN);
-  Serial.println("Setting HX711 #4...");
   g_hx711_4.begin(LOADCELL4_DOUT_PIN, LOADCELL4_SCK_PIN);
-  Serial.println("The scale is set up!");
+
+  g_hx711_1.power_up();
+  g_hx711_2.power_up();
+  g_hx711_3.power_up();
+  g_hx711_4.power_up();
 }
 
 /// @function readHx711
 /// Called to read a value from a single HX711.
-float readHx711(HX711 hx) {
-  while (!hx.is_ready()) {
+long readHx711(HX711 hx) {
+  uint8_t loop_count = 0;
+  while (!hx.is_ready() && loop_count < 100) {
     delay(10);
+    ++loop_count;
   }
-  return hx.read();
+  if (hx.is_ready()) {
+    return hx.read();
+  }
+  return ERROR_NUM;
 }
 
 /// @function read_scale_value
 // Called to read a value from the scale.
-float read_scale_value(void) {
-  float value1 = readHx711(g_hx711_1);
-  float value2 = readHx711(g_hx711_2);
-  float value3 = readHx711(g_hx711_3);
-  float value4 = readHx711(g_hx711_4);
+long read_scale_value(void) {
+  long value1 = readHx711(g_hx711_1);
+  if (value1 == ERROR_NUM) {
+    return ERROR_NUM;
+  }
+  long value2 = readHx711(g_hx711_2);
+  if (value2 == ERROR_NUM) {
+    return ERROR_NUM;
+  }
+  long value3 = readHx711(g_hx711_3);
+  if (value3 == ERROR_NUM) {
+    return ERROR_NUM;
+  }
+  long value4 = readHx711(g_hx711_4);
+  if (value4 == ERROR_NUM) {
+    return ERROR_NUM;
+  }
   return value1 + value2 + value3 + value4;
 }
 
@@ -227,31 +245,38 @@ float read_avg_scale_value(void) {
   // Average three values.
   float value = 0.0;
   for (uint8_t t = 0; t < 3; t++) {
-    float raw_value = read_scale_value();
-    value = value + raw_value;
+    long raw_value = read_scale_value();
+    if (raw_value != ERROR_NUM) {
+      value = value + (float)raw_value;
+    }
   }
-  value = value / 3;
+  value = value / 3.0;
   return value;
 }
 
 /// @function compute_weight
 // Returns the weight, in grams, or -1 upon error.
 float compute_weight(float measured_value) {
-    if (g_tare_value < 0.001) {
-      Serial.println("Error: No tare value!");
-      return -1.0;
-    }
-    if (g_calibration_value < 0.001) {
-      Serial.println("Error: No calibration value!");
-      return -1.0;
-    }
-    if (g_calibration_weight < 0.001) {
-      Serial.println("Error: No calibration weight!");
-      return -1.0;
-    }
-    float m = g_calibration_weight / (g_calibration_value - g_tare_value);
-    float weight = (m * measured_value);
-    return weight;
+  if (!(float_is_valid(g_tare_value) && float_is_valid(g_calibration_value))) {
+    Serial.println("Error: No tare or calibration value!");
+    return (float)ERROR_NUM;
+  }
+  if (!float_is_valid(g_tare_value)) {
+    Serial.println("Error: No tare value!");
+    return (float)ERROR_NUM;
+  }
+  if (!float_is_valid(g_calibration_value)) {
+    Serial.println("Error: No calibration value!");
+    return (float)ERROR_NUM;
+  }
+  if (!float_is_valid(g_calibration_weight)) {
+    Serial.println("Error: No calibration weight!");
+    return (float)ERROR_NUM;
+  }
+
+  float m = g_calibration_weight / (g_calibration_value - g_tare_value);
+  float weight = (m * measured_value);
+  return weight;
 }
 
 /// @function read_config_values
@@ -290,12 +315,12 @@ void loop() {
 
   // Raw value from the scale.
   float raw_value = read_avg_scale_value();
-  Serial.print("Raw Value:");
-  Serial.println(raw_value, 1);
 
   // Convert to weight.
   float weight = compute_weight(raw_value);
-  if (weight > 0.0) {
+
+  // Update the display.
+  if (float_is_valid(weight)) {
     Serial.print("Weight:");
     Serial.println(weight, 1);
 
@@ -303,10 +328,18 @@ void loop() {
     snprintf(buff, sizeof(buff) - 1, "%0.1f g", weight);
     updateDisplayWithWeight(buff);
   }
-  else {
-    updateDisplay("Tare or calibration needed!");
+  else if (!float_is_valid(g_tare_value)) {
+    updateDisplay("Tare needed!");
+  }
+  else if (!float_is_valid(g_calibration_value)) {
+    updateDisplay("Cal. needed!");
   }
 
+  // Print the raw value.
+  Serial.print("Raw Value:");
+  Serial.println(raw_value, 1);
+
+  // Are we being sent a command?
   if (Serial.available() > 0) {
 
     // Read the command from the serial port.
@@ -326,7 +359,6 @@ void loop() {
       g_tare_value = raw_value;
       Serial.print("Tare Value:");
       Serial.println(g_tare_value, 1);
-      updateDisplay("Tare Completed!");
     }
 
     // Compute a new weight value.
@@ -341,7 +373,6 @@ void loop() {
       Serial.println(g_calibration_value, 1);
       Serial.print("Given Weight (g):");
       Serial.println(g_calibration_weight, 1);
-      updateDisplay("Calibration Completed!");
     }
 
     // Receive configuration values from the command and control computer.
