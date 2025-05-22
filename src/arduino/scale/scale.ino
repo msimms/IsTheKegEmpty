@@ -220,23 +220,40 @@ long readHx711(HX711 hx) {
 /// @function read_scale_value
 // Called to read a value from the scale.
 long read_scale_value(void) {
+  long sum = 0;
   long value1 = readHx711(g_hx711_1);
   if (value1 == ERROR_NUM) {
-    return ERROR_NUM;
+    Serial.println("Error reading HX711 #1");
+  }
+  else {
+    Serial.println(value1);
+    sum = sum + value1;
   }
   long value2 = readHx711(g_hx711_2);
   if (value2 == ERROR_NUM) {
-    return ERROR_NUM;
+    Serial.println("Error reading HX711 #2");
+  }
+  else {
+    Serial.println(value2);
+    sum = sum + value2;
   }
   long value3 = readHx711(g_hx711_3);
   if (value3 == ERROR_NUM) {
-    return ERROR_NUM;
+    Serial.println("Error reading HX711 #3");
+  }
+  else {
+    Serial.println(value3);
+    sum = sum + value3;
   }
   long value4 = readHx711(g_hx711_4);
   if (value4 == ERROR_NUM) {
-    return ERROR_NUM;
+    Serial.println("Error reading HX711 #4");
   }
-  return value1 + value2 + value3 + value4;
+  else {
+    Serial.println(value4);
+    sum = sum + value4;
+  }
+  return sum;
 }
 
 /// @function read_avg_scale_value
