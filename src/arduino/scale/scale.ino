@@ -62,14 +62,14 @@ static const unsigned char PROGMEM g_logo_bmp[] =
 };
   
 // HX711 circuit wiring for three load cells.
-const int LOADCELL1_DOUT_PIN = 4;
-const int LOADCELL1_SCK_PIN = 5;
-const int LOADCELL2_DOUT_PIN = 6;
-const int LOADCELL2_SCK_PIN = 7;
-const int LOADCELL3_DOUT_PIN = 8;
-const int LOADCELL3_SCK_PIN = 9;
-const int LOADCELL4_DOUT_PIN = 10;
-const int LOADCELL4_SCK_PIN = 11;
+const int LOADCELL1_DOUT_PIN = 1;
+const int LOADCELL1_SCK_PIN = 2;
+const int LOADCELL2_DOUT_PIN = 3;
+const int LOADCELL2_SCK_PIN = 4;
+const int LOADCELL3_DOUT_PIN = 5;
+const int LOADCELL3_SCK_PIN = 6;
+const int LOADCELL4_DOUT_PIN = 7;
+const int LOADCELL4_SCK_PIN = 8;
 
 // HX711 objects.
 HX711 g_hx711_1;
@@ -193,14 +193,22 @@ void post_status(String str) {
 /// Called once to initializae all of the HX711s.
 void setup_scale(void) {
   g_hx711_1.begin(LOADCELL1_DOUT_PIN, LOADCELL1_SCK_PIN);
+  delay(10);
   g_hx711_2.begin(LOADCELL2_DOUT_PIN, LOADCELL2_SCK_PIN);
+  delay(10);
   g_hx711_3.begin(LOADCELL3_DOUT_PIN, LOADCELL3_SCK_PIN);
+  delay(10);
   g_hx711_4.begin(LOADCELL4_DOUT_PIN, LOADCELL4_SCK_PIN);
+  delay(10);
 
   g_hx711_1.power_up();
+  delay(10);
   g_hx711_2.power_up();
+  delay(10);
   g_hx711_3.power_up();
+  delay(10);
   g_hx711_4.power_up();
+  delay(10);
 }
 
 /// @function readHx711
@@ -221,6 +229,8 @@ long readHx711(HX711 hx) {
 // Called to read a value from the scale.
 long read_scale_value(void) {
   long sum = 0;
+
+  // Load Cell 1
   long value1 = readHx711(g_hx711_1);
   if (value1 == ERROR_NUM) {
     Serial.println("Error reading HX711 #1");
@@ -229,6 +239,8 @@ long read_scale_value(void) {
     Serial.println(value1);
     sum = sum + value1;
   }
+
+  // Load Cell 2
   long value2 = readHx711(g_hx711_2);
   if (value2 == ERROR_NUM) {
     Serial.println("Error reading HX711 #2");
@@ -237,6 +249,8 @@ long read_scale_value(void) {
     Serial.println(value2);
     sum = sum + value2;
   }
+
+  // Load Cell 3
   long value3 = readHx711(g_hx711_3);
   if (value3 == ERROR_NUM) {
     Serial.println("Error reading HX711 #3");
@@ -245,6 +259,8 @@ long read_scale_value(void) {
     Serial.println(value3);
     sum = sum + value3;
   }
+
+  // Load Cell 4
   long value4 = readHx711(g_hx711_4);
   if (value4 == ERROR_NUM) {
     Serial.println("Error reading HX711 #4");
