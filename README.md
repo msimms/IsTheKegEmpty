@@ -33,10 +33,9 @@ Tools -> Board -> Booard Manager -> Install Arduino SAMD Boards
 
 Tools -> Manager Libraries
 Install the following libraries:
-* ArduinoHttpClient
-* HttpClient
+* Adafruit SSD1306 (for the screen)
+* HX711 Arduno Library by Bogdan Necula
 * WiFiNINA
-* AdaFruit HX711
 
 ### Build and Upload the Firmware
 
