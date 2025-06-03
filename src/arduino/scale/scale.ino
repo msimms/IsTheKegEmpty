@@ -62,14 +62,14 @@ static const unsigned char PROGMEM g_logo_bmp[] =
 };
   
 // HX711 circuit wiring for three load cells.
-const int LOADCELL1_DOUT_PIN = 1;
-const int LOADCELL1_SCK_PIN = 2;
-const int LOADCELL2_DOUT_PIN = 3;
-const int LOADCELL2_SCK_PIN = 4;
-const int LOADCELL3_DOUT_PIN = 5;
-const int LOADCELL3_SCK_PIN = 6;
-const int LOADCELL4_DOUT_PIN = 7;
-const int LOADCELL4_SCK_PIN = 8;
+const int LOADCELL1_DOUT_PIN = 2;
+const int LOADCELL1_SCK_PIN = 3;
+const int LOADCELL2_DOUT_PIN = 4;
+const int LOADCELL2_SCK_PIN = 5;
+const int LOADCELL3_DOUT_PIN = 6;
+const int LOADCELL3_SCK_PIN = 7;
+const int LOADCELL4_DOUT_PIN = 8;
+const int LOADCELL4_SCK_PIN = 9;
 
 // HX711 objects.
 HX711 g_hx711_1;
