@@ -1,26 +1,52 @@
-// Created by Michael Simms
+// MIT License
+//
+// Copyright (c) 2025 Mike Simms
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include <SPI.h>
 #include <Adafruit_SSD1306.h>
 #include <HX711.h>
 #include <Wire.h>
-#include <WiFiNINA.h>
+#include <WiFiS3.h>
+#include <ArduinoHttpClient.h>
+#include "Arduino_LED_Matrix.h" // Include the LED_Matrix library
 #include "arduino_secrets.h" 
 
 // Wifi
 char ssid[] = SECRET_SSID; // your network SSID (name)
 char pass[] = SECRET_PASS; // your network password (use for WPA, or use as key for WEP)
 
+// Initialize WiFi.
+WiFiClient g_wifi_client;
+
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 // The pins for I2C are defined by the Wire-library. 
 // On an arduino UNO:       A4(SDA), A5(SCL)
 // On an arduino MEGA 2560: 20(SDA), 21(SCL)
 // On an arduino LEONARDO:   2(SDA),  3(SCL), ...
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 32 // OLED display height, in pixels
-#define OLED_RESET -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_WIDTH 128    // OLED display width, in pixels
+#define SCREEN_HEIGHT 32    // OLED display height, in pixels
+#define OLED_RESET -1       // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 g_display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+ArduinoLEDMatrix g_matrix;  // Create an instance of the ArduinoLEDMatrix class
 
 #define LOGO_HEIGHT 32
 #define LOGO_WIDTH  32
@@ -100,9 +126,17 @@ void draw_logo(void) {
   g_display.display();
 }
 
-/// @function updateDisplay
-void updateDisplay(char* msg) {
+/// @function update_builtin_display
+void update_builtin_display(char* msg) {
+}
+
+/// @function update_display
+void update_display(char* msg) {
+
+  // Logo.
   draw_logo();
+
+  // Message.
   g_display.setTextSize(1); // X pixel scale
   g_display.setTextColor(SSD1306_WHITE); // Draw white text
   g_display.setCursor(LEFT_TEXT_MARGIN, 14); // Start at top-left corner, after the logo
@@ -110,9 +144,13 @@ void updateDisplay(char* msg) {
   g_display.display();
 }
 
-/// @function updateDisplayWithWeight
-void updateDisplayWithWeight(char* msg) {
+/// @function update_display_with_weight
+void update_display_with_weight(char* msg) {
+
+  // Logo.
   draw_logo();
+
+  // Message.
   g_display.setTextSize(2); // X pixel scale
   g_display.setTextColor(SSD1306_WHITE); // Draw white text
   g_display.setCursor(LEFT_TEXT_MARGIN, 14); // Start at top-left corner, after the logo
@@ -136,56 +174,42 @@ void setup_wifi() {
   Serial.println("Setting up Wifi...");
 
   // Attempt to connect to Wi-Fi network:
-  int wifi_status = WL_IDLE_STATUS;
-  while (wifi_status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to the network: ");
-    Serial.println(ssid);
-    wifi_status = WiFi.begin(ssid, pass);
-
-    // Wait a few seconds for connection.
-    delay(5000);
+  while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
+    Serial.print(".");
+    delay(1000);
   }
 
   // You're connected now, so print out the data.
   Serial.println("Wifi connected!");
 }
 
-/// @function print_wifi_status
-void print_wifi_status() {
-  // Print the SSID of the attached network.
-  Serial.print("SSID: ");
-  Serial.println(WiFi.SSID());
-
-  // Print the board's IP address.
-  IPAddress ip = WiFi.localIP();
-  Serial.print("IP Address: ");
-  Serial.println(ip);
-
-  // Print the received signal strength.
-  long rssi = WiFi.RSSI();
-  Serial.print("Signal strength (RSSI):");
-  Serial.print(rssi);
-  Serial.println(" dBm");
-}
-
 /// @function post_status
-void post_status(String str) {
+void post_status(String post_data) {
   if (WiFi.status() == WL_CONNECTED) {
-    WiFiClient client;
+    HttpClient client = HttpClient(g_wifi_client, STATUS_URL, STATUS_PORT);
 
     Serial.println("Sending status...");
-    if (client.connect(STATUS_URL, STATUS_PORT)) {
-      client.println(str);
-      Serial.println("Status sent!");
-    } else {
-      Serial.println("Error connecting to the server!");
-      print_wifi_status();
-    }
-    client.stop();
+
+    // Set headers
+    client.beginRequest();
+    client.post(STATUS_ENDPOINT);
+    client.sendHeader("Content-Type", "application/json");
+    client.sendHeader("Content-Length", post_data.length());
+    client.beginBody();
+    client.print(post_data);
+    client.endRequest();
+
+    // Get response
+    int status_code = client.responseStatusCode();
+    String response = client.responseBody();
+
+    Serial.print("Status Code: ");
+    Serial.println(status_code);
+    Serial.print("Response: ");
+    Serial.println(response);
   }
   else {
     Serial.println("Not connected to Wifi!");
-    print_wifi_status();
   }
 }
 
@@ -290,6 +314,8 @@ float read_avg_scale_value(void) {
 /// @function compute_weight
 // Returns the weight, in grams, or -1 upon error.
 float compute_weight(float measured_value) {
+
+  // Make sure we have tare and calibration values and a calibration weight.
   if (!(float_is_valid(g_tare_value) && float_is_valid(g_calibration_value))) {
     Serial.println("Error: No tare or calibration value!");
     return (float)ERROR_NUM;
@@ -359,13 +385,13 @@ void loop() {
 
     char buff[64];
     snprintf(buff, sizeof(buff) - 1, "%0.1f g", weight);
-    updateDisplayWithWeight(buff);
+    update_display_with_weight(buff);
   }
   else if (!float_is_valid(g_tare_value)) {
-    updateDisplay("Tare needed!");
+    update_display("Tare needed!");
   }
   else if (!float_is_valid(g_calibration_value)) {
-    updateDisplay("Cal. needed!");
+    update_display("Cal. needed!");
   }
 
   // Print the raw value.
@@ -386,7 +412,7 @@ void loop() {
 
     // Compute a new tare value.
     else if (received_char == 'T') {
-      updateDisplay("Tareing...");
+      update_display("Tareing...");
       Serial.println("Tareing...");
 
       g_tare_value = raw_value;
@@ -396,7 +422,7 @@ void loop() {
 
     // Compute a new weight value.
     else if (received_char == 'W') {
-      updateDisplay("Calibrating...");
+      update_display("Calibrating...");
       Serial.println("Calibrating...");
 
       read_given_weight_value();
