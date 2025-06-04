@@ -119,8 +119,7 @@ bool float_is_valid(float num) {
 /// @function draw_logo
 void draw_logo(void) {
   g_display.clearDisplay();
-  g_display.drawBitmap(
-    LEFT_LOGO_MARGIN,
+  g_display.drawBitmap(LEFT_LOGO_MARGIN,
     ((g_display.height() - LOGO_HEIGHT) / 2) + 2,
     g_logo_bmp, LOGO_WIDTH, LOGO_HEIGHT, 1);
   g_display.display();
@@ -160,18 +159,26 @@ void update_display_with_weight(char* msg) {
 
 /// @function setup_display
 void setup_display(void) {
+
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if (g_display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     draw_logo();
   }
   else {
-    Serial.println("Error: SSD1306 allocation failed!");
+    Serial.println("[ERROR] SSD1306 allocation failed!");
   }
 }
 
 /// @function setup_wifi
 void setup_wifi() {
-  Serial.println("Setting up Wifi...");
+
+  // Make sure we were given a network to connect to.
+  if (strlen(SECRET_SSID) == 0) {
+    Serial.println("[ERROR] SSID not specified!");
+    return;
+  }
+
+  Serial.println("[INFO] Connecting to wifi...");
 
   // Attempt to connect to Wi-Fi network:
   while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
@@ -185,32 +192,41 @@ void setup_wifi() {
 
 /// @function post_status
 void post_status(String post_data) {
+
+  // Make sure we were given a server to connect to.
+  if (strlen(STATUS_URL) == 0) {
+    Serial.println("[ERROR] Status server not specified!");
+    return;
+  }
+
+  // Make sure the network is actually connected.
   if (WiFi.status() == WL_CONNECTED) {
-    HttpClient client = HttpClient(g_wifi_client, STATUS_URL, STATUS_PORT);
-
-    Serial.println("Sending status...");
-
-    // Set headers
-    client.beginRequest();
-    client.post(STATUS_ENDPOINT);
-    client.sendHeader("Content-Type", "application/json");
-    client.sendHeader("Content-Length", post_data.length());
-    client.beginBody();
-    client.print(post_data);
-    client.endRequest();
-
-    // Get response
-    int status_code = client.responseStatusCode();
-    String response = client.responseBody();
-
-    Serial.print("Status Code: ");
-    Serial.println(status_code);
-    Serial.print("Response: ");
-    Serial.println(response);
+    Serial.println("[ERROR] Not connected to wifi!");
+    return;
   }
-  else {
-    Serial.println("Not connected to Wifi!");
-  }
+
+  // Connect to the status server.
+  Serial.println("[INFO] Sending status...");
+  HttpClient client = HttpClient(g_wifi_client, STATUS_URL, STATUS_PORT);
+
+  // Set headers.
+  client.beginRequest();
+  client.post(STATUS_ENDPOINT);
+  client.sendHeader("Content-Type", "application/json");
+  client.sendHeader("Content-Length", post_data.length());
+  client.beginBody();
+  client.print(post_data);
+  client.endRequest();
+
+  // Get response.
+  int status_code = client.responseStatusCode();
+  String response = client.responseBody();
+
+  // Print the response.
+  Serial.print("[INFO] Http Status Code: ");
+  Serial.println(status_code);
+  Serial.print("[INFO] Http Response: ");
+  Serial.println(response);
 }
 
 /// @function setup_scale
@@ -257,9 +273,10 @@ long read_scale_value(void) {
   // Load Cell 1
   long value1 = readHx711(g_hx711_1);
   if (value1 == ERROR_NUM) {
-    Serial.println("Error reading HX711 #1");
+    Serial.println("[ERROR] Error reading HX711 #1");
   }
   else {
+    Serial.print("[INFO] HX711 #1: ");
     Serial.println(value1);
     sum = sum + value1;
   }
@@ -267,9 +284,10 @@ long read_scale_value(void) {
   // Load Cell 2
   long value2 = readHx711(g_hx711_2);
   if (value2 == ERROR_NUM) {
-    Serial.println("Error reading HX711 #2");
+    Serial.println("[ERROR] Error reading HX711 #2");
   }
   else {
+    Serial.print("[INFO] HX711 #2: ");
     Serial.println(value2);
     sum = sum + value2;
   }
@@ -277,9 +295,10 @@ long read_scale_value(void) {
   // Load Cell 3
   long value3 = readHx711(g_hx711_3);
   if (value3 == ERROR_NUM) {
-    Serial.println("Error reading HX711 #3");
+    Serial.println("[ERROR] Error reading HX711 #3");
   }
   else {
+    Serial.print("[INFO] HX711 #3: ");
     Serial.println(value3);
     sum = sum + value3;
   }
@@ -287,9 +306,10 @@ long read_scale_value(void) {
   // Load Cell 4
   long value4 = readHx711(g_hx711_4);
   if (value4 == ERROR_NUM) {
-    Serial.println("Error reading HX711 #4");
+    Serial.println("[ERROR] Error reading HX711 #4");
   }
   else {
+    Serial.print("[INFO] HX711 #4: ");
     Serial.println(value4);
     sum = sum + value4;
   }
@@ -316,20 +336,16 @@ float read_avg_scale_value(void) {
 float compute_weight(float measured_value) {
 
   // Make sure we have tare and calibration values and a calibration weight.
-  if (!(float_is_valid(g_tare_value) && float_is_valid(g_calibration_value))) {
-    Serial.println("Error: No tare or calibration value!");
-    return (float)ERROR_NUM;
-  }
   if (!float_is_valid(g_tare_value)) {
-    Serial.println("Error: No tare value!");
+    Serial.println("[ERROR] No tare value!");
     return (float)ERROR_NUM;
   }
   if (!float_is_valid(g_calibration_value)) {
-    Serial.println("Error: No calibration value!");
+    Serial.println("[ERROR] No calibration value!");
     return (float)ERROR_NUM;
   }
   if (!float_is_valid(g_calibration_weight)) {
-    Serial.println("Error: No calibration weight!");
+    Serial.println("[ERROR] No calibration weight!");
     return (float)ERROR_NUM;
   }
 
@@ -380,7 +396,7 @@ void loop() {
 
   // Update the display.
   if (float_is_valid(weight)) {
-    Serial.print("Weight:");
+    Serial.print("[INFO] Weight:");
     Serial.println(weight, 1);
 
     char buff[64];
@@ -395,7 +411,7 @@ void loop() {
   }
 
   // Print the raw value.
-  Serial.print("Raw Value:");
+  Serial.print("[INFO] Raw Value:");
   Serial.println(raw_value, 1);
 
   // Are we being sent a command?
@@ -406,7 +422,7 @@ void loop() {
 
     // Read from the scale.
     if (received_char == 'R') {
-      Serial.print("Weight:");
+      Serial.print("[INFO] Weight:");
       Serial.println(weight, 1);
     }
 
@@ -416,32 +432,32 @@ void loop() {
       Serial.println("Tareing...");
 
       g_tare_value = raw_value;
-      Serial.print("Tare Value:");
+      Serial.print("[INFO] Tare Value:");
       Serial.println(g_tare_value, 1);
     }
 
     // Compute a new weight value.
     else if (received_char == 'W') {
       update_display("Calibrating...");
-      Serial.println("Calibrating...");
+      Serial.println("[INFO] Calibrating...");
 
       read_given_weight_value();
       g_calibration_value = raw_value;
 
-      Serial.print("Given Value:");
+      Serial.print("[INFO] Given Value:");
       Serial.println(g_calibration_value, 1);
-      Serial.print("Given Weight (g):");
+      Serial.print("[INFO] Given Weight (g):");
       Serial.println(g_calibration_weight, 1);
     }
 
     // Receive configuration values from the command and control computer.
     else if (received_char == 'C') {
       read_config_values();
-      Serial.print("Tare Value:");
+      Serial.print("[INFO] Tare Value:");
       Serial.println(g_tare_value, 1);
-      Serial.print("Config Value:");
+      Serial.print("[INFO] Config Value:");
       Serial.println(g_calibration_value, 1);
-      Serial.print("Config Weight (g):");
+      Serial.print("[INFO] Config Weight (g):");
       Serial.println(g_calibration_weight, 1);
     }
   }
