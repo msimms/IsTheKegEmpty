@@ -18,13 +18,18 @@ import InputChecker
 from urllib.parse import unquote_plus
 from mako.template import Template
 
+# Global variables
 g_app = None
 g_flask_app = flask.Flask(__name__)
 
+# Files and directories
 ERROR_LOG = 'error.log'
-MIN_PASSWORD_LEN = 8
 HTML_DIR = 'html'
+
+MIN_PASSWORD_LEN = 8
 DATABASE_ID_KEY = "_id"
+
+# Constants used with the API
 PARAM_DEVICE_ID = 'device_id'
 PARAM_READING = 'reading'
 PARAM_READING_TIME = 'reading_time'
