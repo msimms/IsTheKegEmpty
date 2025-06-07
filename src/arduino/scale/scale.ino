@@ -355,6 +355,8 @@ float compute_weight(float measured_value) {
 }
 
 /// @function read_config_values
+/// Reads a comma separated list of tare value, calibration value, and calibration weight (in g)
+/// from the serial input.
 void read_config_values() {
   if (Serial.available() > 0) {
     char c = Serial.read();
@@ -367,6 +369,7 @@ void read_config_values() {
 }
 
 /// @function read_given_weight_value
+/// Reads the calibration weight (in g) from the serial input.
 void read_given_weight_value(void) {
   if (Serial.available() > 0) {
     char c = Serial.read();
@@ -377,11 +380,25 @@ void read_given_weight_value(void) {
 /// @function setup
 /// Called once, at program start
 void setup() {
+
+  // Set the serial IO rate.
   Serial.begin(9600);
+
+  // Initialize the I2C interface.
   Wire.begin();
+
+  // Connect to the wifi network.
   setup_wifi();
+
+  // Initialize the external display.
   setup_display();
+
+  // Initialize the scale.
   setup_scale();
+
+  // Initialize the UNO R4's built-in display
+  g_matrix.begin();
+  g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
 }
 
 /// @function loop
@@ -402,12 +419,22 @@ void loop() {
     char buff[64];
     snprintf(buff, sizeof(buff) - 1, "%0.1f g", weight);
     update_display_with_weight(buff);
+
+    g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
   }
   else if (!float_is_valid(g_tare_value)) {
+    Serial.println("[INFO] Tare needed!");
     update_display("Tare needed!");
+    g_matrix.loadFrame(LEDMATRIX_DANGER);
   }
   else if (!float_is_valid(g_calibration_value)) {
+    Serial.println("[INFO] Calibration needed!");
     update_display("Cal. needed!");
+    g_matrix.loadFrame(LEDMATRIX_DANGER);
+  }
+  else {
+    Serial.print("[ERROR] Error reading weight!");
+    g_matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
   }
 
   // Print the raw value.
