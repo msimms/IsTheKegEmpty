@@ -103,6 +103,12 @@ HX711 g_hx711_2;
 HX711 g_hx711_3;
 HX711 g_hx711_4;
 
+// The most recent raw values.
+long g_raw_value_1 = 0;
+long g_raw_value_2 = 0;
+long g_raw_value_3 = 0;
+long g_raw_value_4 = 0;
+
 // Will return this as an error code when reading an HX711.
 #define ERROR_NUM -1
 
@@ -232,15 +238,8 @@ void post_status(String post_data) {
 /// @function setup_scale
 /// Called once to initializae all of the HX711s.
 void setup_scale(void) {
-  g_hx711_1.begin(LOADCELL1_DOUT_PIN, LOADCELL1_SCK_PIN);
-  delay(10);
-  g_hx711_2.begin(LOADCELL2_DOUT_PIN, LOADCELL2_SCK_PIN);
-  delay(10);
-  g_hx711_3.begin(LOADCELL3_DOUT_PIN, LOADCELL3_SCK_PIN);
-  delay(10);
-  g_hx711_4.begin(LOADCELL4_DOUT_PIN, LOADCELL4_SCK_PIN);
-  delay(10);
 
+  // Make sure the load cell amplifiers are on.
   g_hx711_1.power_up();
   delay(10);
   g_hx711_2.power_up();
@@ -248,6 +247,16 @@ void setup_scale(void) {
   g_hx711_3.power_up();
   delay(10);
   g_hx711_4.power_up();
+  delay(10);
+
+  // Configure the load cell amplifiers.
+  g_hx711_1.begin(LOADCELL1_DOUT_PIN, LOADCELL1_SCK_PIN);
+  delay(10);
+  g_hx711_2.begin(LOADCELL2_DOUT_PIN, LOADCELL2_SCK_PIN);
+  delay(10);
+  g_hx711_3.begin(LOADCELL3_DOUT_PIN, LOADCELL3_SCK_PIN);
+  delay(10);
+  g_hx711_4.begin(LOADCELL4_DOUT_PIN, LOADCELL4_SCK_PIN);
   delay(10);
 }
 
@@ -271,63 +280,72 @@ long read_scale_value(void) {
   long sum = 0;
 
   // Load Cell 1
-  long value1 = readHx711(g_hx711_1);
-  if (value1 == ERROR_NUM) {
-    Serial.println("[ERROR] Error reading HX711 #1");
+  g_raw_value_1 = readHx711(g_hx711_1);
+  if (g_raw_value_1 == ERROR_NUM) {
+    Serial.println("[ERROR] Failed to read from HX711 #1");
+    return ERROR_NUM;
   }
   else {
-    Serial.print("[INFO] HX711 #1: ");
-    Serial.println(value1);
-    sum = sum + value1;
+    Serial.print("[DEBUG] HX711 #1: ");
+    Serial.println(g_raw_value_1);
+    sum = sum + g_raw_value_1;
   }
 
   // Load Cell 2
-  long value2 = readHx711(g_hx711_2);
-  if (value2 == ERROR_NUM) {
-    Serial.println("[ERROR] Error reading HX711 #2");
+  g_raw_value_2 = readHx711(g_hx711_2);
+  if (g_raw_value_2 == ERROR_NUM) {
+    Serial.println("[ERROR] Failed to read from HX711 #2");
+    return ERROR_NUM;
   }
   else {
-    Serial.print("[INFO] HX711 #2: ");
-    Serial.println(value2);
-    sum = sum + value2;
+    Serial.print("[DEBUG] HX711 #2: ");
+    Serial.println(g_raw_value_2);
+    sum = sum + g_raw_value_2;
   }
 
   // Load Cell 3
-  long value3 = readHx711(g_hx711_3);
-  if (value3 == ERROR_NUM) {
-    Serial.println("[ERROR] Error reading HX711 #3");
+  g_raw_value_3 = readHx711(g_hx711_3);
+  if (g_raw_value_3 == ERROR_NUM) {
+    Serial.println("[ERROR] Failed to read from HX711 #3");
+    return ERROR_NUM;
   }
   else {
-    Serial.print("[INFO] HX711 #3: ");
-    Serial.println(value3);
-    sum = sum + value3;
+    Serial.print("[DEBUG] HX711 #3: ");
+    Serial.println(g_raw_value_3);
+    sum = sum + g_raw_value_3;
   }
 
   // Load Cell 4
-  long value4 = readHx711(g_hx711_4);
-  if (value4 == ERROR_NUM) {
-    Serial.println("[ERROR] Error reading HX711 #4");
+  g_raw_value_4 = readHx711(g_hx711_4);
+  if (g_raw_value_4 == ERROR_NUM) {
+    Serial.println("[ERROR] Failed to read from HX711 #4");
+    return ERROR_NUM;
   }
   else {
-    Serial.print("[INFO] HX711 #4: ");
-    Serial.println(value4);
-    sum = sum + value4;
+    Serial.print("[DEBUG] HX711 #4: ");
+    Serial.println(g_raw_value_4);
+    sum = sum + g_raw_value_4;
   }
   return sum;
 }
 
 /// @function read_avg_scale_value
+/// Takes three scale readings and averages them together.
 float read_avg_scale_value(void) {
 
-  // Average three values.
+  // Take the average of three values.
   float value = 0.0;
+  float count = 0;
   for (uint8_t t = 0; t < 3; t++) {
     long raw_value = read_scale_value();
     if (raw_value != ERROR_NUM) {
       value = value + (float)raw_value;
+      count = count + 1;
     }
   }
-  value = value / 3.0;
+  if (count > 0) {
+    value = value / count;
+  }
   return value;
 }
 
@@ -336,6 +354,10 @@ float read_avg_scale_value(void) {
 float compute_weight(float measured_value) {
 
   // Make sure we have tare and calibration values and a calibration weight.
+  if (!(float_is_valid(g_tare_value) && float_is_valid(g_calibration_value))) {
+    Serial.println("[ERROR] No tare or calibration value!");
+    return (float)ERROR_NUM;
+  }
   if (!float_is_valid(g_tare_value)) {
     Serial.println("[ERROR] No tare value!");
     return (float)ERROR_NUM;
@@ -408,18 +430,18 @@ void loop() {
   // Raw value from the scale.
   float raw_value = read_avg_scale_value();
 
+  // Print all the raw values.
+  Serial.println("Raw Value:" + String(raw_value) + ":" + String(g_raw_value_1) + ":" + String(g_raw_value_2) + ":" + String(g_raw_value_3) + ":" + String(g_raw_value_4));
+
   // Convert to weight.
   float weight = compute_weight(raw_value);
 
   // Update the display.
   if (float_is_valid(weight)) {
-    Serial.print("[INFO] Weight:");
-    Serial.println(weight, 1);
-
     char buff[64];
     snprintf(buff, sizeof(buff) - 1, "%0.1f g", weight);
     update_display_with_weight(buff);
-
+g
     g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
   }
   else if (!float_is_valid(g_tare_value)) {
@@ -433,13 +455,9 @@ void loop() {
     g_matrix.loadFrame(LEDMATRIX_DANGER);
   }
   else {
-    Serial.print("[ERROR] Error reading weight!");
+    Serial.print("[ERROR] Unable to read weight!");
     g_matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
   }
-
-  // Print the raw value.
-  Serial.print("[INFO] Raw Value:");
-  Serial.println(raw_value, 1);
 
   // Are we being sent a command?
   if (Serial.available() > 0) {
@@ -449,42 +467,41 @@ void loop() {
 
     // Read from the scale.
     if (received_char == 'R') {
-      Serial.print("[INFO] Weight:");
+      Serial.print("[INFO] Weight = ");
       Serial.println(weight, 1);
     }
 
     // Compute a new tare value.
     else if (received_char == 'T') {
       update_display("Tareing...");
-      Serial.println("Tareing...");
 
       g_tare_value = raw_value;
-      Serial.print("[INFO] Tare Value:");
+      Serial.print("[INFO] Tare Value = ");
       Serial.println(g_tare_value, 1);
     }
 
     // Compute a new weight value.
     else if (received_char == 'W') {
       update_display("Calibrating...");
-      Serial.println("[INFO] Calibrating...");
 
       read_given_weight_value();
       g_calibration_value = raw_value;
 
-      Serial.print("[INFO] Given Value:");
+      Serial.print("[INFO] Given Value = ");
       Serial.println(g_calibration_value, 1);
-      Serial.print("[INFO] Given Weight (g):");
+      Serial.print("[INFO] Given Weight (g) = ");
       Serial.println(g_calibration_weight, 1);
     }
 
     // Receive configuration values from the command and control computer.
     else if (received_char == 'C') {
       read_config_values();
-      Serial.print("[INFO] Tare Value:");
+
+      Serial.print("[INFO] Tare Value = ");
       Serial.println(g_tare_value, 1);
-      Serial.print("[INFO] Config Value:");
+      Serial.print("[INFO] Config Value = ");
       Serial.println(g_calibration_value, 1);
-      Serial.print("[INFO] Config Weight (g):");
+      Serial.print("[INFO] Config Weight (g) = ");
       Serial.println(g_calibration_weight, 1);
     }
   }
