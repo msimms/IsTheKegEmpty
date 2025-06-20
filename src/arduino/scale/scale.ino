@@ -116,6 +116,8 @@ long g_raw_value_4 = 0;
 float g_tare_value = 0.0;
 float g_calibration_value = 0.0;
 float g_calibration_weight = 0.0;
+bool g_tare_set = false;
+bool g_cal_set = false;
 
 /// @function float_is_valid
 bool float_is_valid(float num) {
@@ -269,7 +271,7 @@ long readHx711(HX711 hx) {
     ++loop_count;
   }
   if (hx.is_ready()) {
-    return hx.read();
+    return hx.read_average();
   }
   return ERROR_NUM;
 }
@@ -286,8 +288,6 @@ long read_scale_value(void) {
     return ERROR_NUM;
   }
   else {
-    Serial.print("[DEBUG] HX711 #1: ");
-    Serial.println(g_raw_value_1);
     sum = sum + g_raw_value_1;
   }
 
@@ -298,8 +298,6 @@ long read_scale_value(void) {
     return ERROR_NUM;
   }
   else {
-    Serial.print("[DEBUG] HX711 #2: ");
-    Serial.println(g_raw_value_2);
     sum = sum + g_raw_value_2;
   }
 
@@ -310,8 +308,6 @@ long read_scale_value(void) {
     return ERROR_NUM;
   }
   else {
-    Serial.print("[DEBUG] HX711 #3: ");
-    Serial.println(g_raw_value_3);
     sum = sum + g_raw_value_3;
   }
 
@@ -322,31 +318,9 @@ long read_scale_value(void) {
     return ERROR_NUM;
   }
   else {
-    Serial.print("[DEBUG] HX711 #4: ");
-    Serial.println(g_raw_value_4);
     sum = sum + g_raw_value_4;
   }
   return sum;
-}
-
-/// @function read_avg_scale_value
-/// Takes three scale readings and averages them together.
-float read_avg_scale_value(void) {
-
-  // Take the average of three values.
-  float value = 0.0;
-  float count = 0;
-  for (uint8_t t = 0; t < 3; t++) {
-    long raw_value = read_scale_value();
-    if (raw_value != ERROR_NUM) {
-      value = value + (float)raw_value;
-      count = count + 1;
-    }
-  }
-  if (count > 0) {
-    value = value / count;
-  }
-  return value;
 }
 
 /// @function compute_weight
@@ -354,20 +328,16 @@ float read_avg_scale_value(void) {
 float compute_weight(float measured_value) {
 
   // Make sure we have tare and calibration values and a calibration weight.
-  if (!(float_is_valid(g_tare_value) && float_is_valid(g_calibration_value))) {
+  if (!g_tare_set && !g_cal_set) {
     Serial.println("[ERROR] No tare or calibration value!");
     return (float)ERROR_NUM;
   }
-  if (!float_is_valid(g_tare_value)) {
+  if (!g_tare_set) {
     Serial.println("[ERROR] No tare value!");
     return (float)ERROR_NUM;
   }
-  if (!float_is_valid(g_calibration_value)) {
-    Serial.println("[ERROR] No calibration value!");
-    return (float)ERROR_NUM;
-  }
-  if (!float_is_valid(g_calibration_weight)) {
-    Serial.println("[ERROR] No calibration weight!");
+  if (!g_cal_set) {
+    Serial.println("[ERROR] Not calibrated!");
     return (float)ERROR_NUM;
   }
 
@@ -387,6 +357,8 @@ void read_config_values() {
     g_calibration_value = Serial.parseFloat();
     c = Serial.read();
     g_calibration_weight = Serial.parseFloat();
+    g_tare_set = true;
+    g_cal_set = true;
   }
 }
 
@@ -427,48 +399,59 @@ void setup() {
 /// Called repeatedly
 void loop() {
 
+  float weight = 0.0;
+  bool weight_calculated = false;
+
   // Raw value from the scale.
-  float raw_value = read_avg_scale_value();
+  float raw_value = read_scale_value();
 
   // Print all the raw values.
-  Serial.println("Raw Value:" + String(raw_value) + ":" + String(g_raw_value_1) + ":" + String(g_raw_value_2) + ":" + String(g_raw_value_3) + ":" + String(g_raw_value_4));
+  Serial.println("[DATA] Raw Values = " + String(raw_value) + ":" + String(g_raw_value_1) + ":" + String(g_raw_value_2) + ":" + String(g_raw_value_3) + ":" + String(g_raw_value_4));
 
-  // Convert to weight.
-  float weight = compute_weight(raw_value);
-
-  // Update the display.
-  if (float_is_valid(weight)) {
-    char buff[64];
-    snprintf(buff, sizeof(buff) - 1, "%0.1f g", weight);
-    update_display_with_weight(buff);
-g
-    g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
-  }
-  else if (!float_is_valid(g_tare_value)) {
+  // Calculate weight and update the display.
+  if (!g_tare_set) {
     Serial.println("[INFO] Tare needed!");
     update_display("Tare needed!");
     g_matrix.loadFrame(LEDMATRIX_DANGER);
   }
-  else if (!float_is_valid(g_calibration_value)) {
+  else if (!g_cal_set) {
     Serial.println("[INFO] Calibration needed!");
     update_display("Cal. needed!");
     g_matrix.loadFrame(LEDMATRIX_DANGER);
   }
   else {
-    Serial.print("[ERROR] Unable to read weight!");
-    g_matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
+
+    // Convert to weight.
+    weight = compute_weight(raw_value);
+    if (float_is_valid(weight)) {
+      char buff[64];
+      snprintf(buff, sizeof(buff) - 1, "%0.1f g", weight);
+      update_display_with_weight(buff);
+
+      g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
+      weight_calculated = true;
+    }
+    else {
+      Serial.print("[ERROR] Unable to read weight!");
+      g_matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
+    }
   }
 
   // Are we being sent a command?
-  if (Serial.available() > 0) {
+  while (Serial.available() > 0) {
 
     // Read the command from the serial port.
     char received_char = Serial.read();
 
     // Read from the scale.
     if (received_char == 'R') {
-      Serial.print("[INFO] Weight = ");
-      Serial.println(weight, 1);
+      if (weight_calculated) {
+        Serial.print("[DATA] Weight = ");
+        Serial.println(weight, 1);
+      }
+      else {
+        Serial.println("[ERROR] Weight unavailable due to lack or tare or calibration values!");
+      }
     }
 
     // Compute a new tare value.
@@ -476,8 +459,9 @@ g
       update_display("Tareing...");
 
       g_tare_value = raw_value;
-      Serial.print("[INFO] Tare Value = ");
+      Serial.print("[DATA] Tare Value = ");
       Serial.println(g_tare_value, 1);
+      g_tare_set = true;
     }
 
     // Compute a new weight value.
@@ -487,9 +471,9 @@ g
       read_given_weight_value();
       g_calibration_value = raw_value;
 
-      Serial.print("[INFO] Given Value = ");
+      Serial.print("[DATA] Given Value = ");
       Serial.println(g_calibration_value, 1);
-      Serial.print("[INFO] Given Weight (g) = ");
+      Serial.print("[DATA] Given Weight (g) = ");
       Serial.println(g_calibration_weight, 1);
     }
 
@@ -503,6 +487,12 @@ g
       Serial.println(g_calibration_value, 1);
       Serial.print("[INFO] Config Weight (g) = ");
       Serial.println(g_calibration_weight, 1);
+    }
+
+    // Unknown command.
+    else {
+      Serial.print("[ERROR] Unknown command: ");
+      Serial.println(received_char);
     }
   }
 
